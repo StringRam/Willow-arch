@@ -201,6 +201,10 @@ grub_installation() {
 }
 
 
+#┌──────────────────────────────  ──────────────────────────────┐
+#                       Installation process
+#└──────────────────────────────  ──────────────────────────────┘
+
 # Clean the tty before starting
 clear
 
@@ -223,7 +227,5 @@ echo -ne "${BOLD}${GREEN}
 ${RESET}"
 
 info_print "Welcome to the Willow-Arch! A somewhat flexible archlinux installation script"
-
-
-
 error_print "Before continuing, a warning: all data on the selected disk will be wiped"
+
