@@ -6,7 +6,7 @@
 #   *BTRFS root partition
 #   *@root, @home, @var_log, @snapshots and @swap subvolumes(can opt out of snapshots)
 #   *Manual swap file size
-#   *Optional System encryption
+#   *Optional LUKS system encryption
 #
 # MIT License Copyright (c) 2025 Mateo Correa Franco
 
@@ -160,23 +160,45 @@ microcode_detector() {
 
 }
 
+package_install() {
 
-#┌──────────────────────────────  ──────────────────────────────┐
-#                          Fstab/Timezone
-#└──────────────────────────────  ──────────────────────────────┘
-
+}
 
 
 #┌──────────────────────────────  ──────────────────────────────┐
-#                  User/Hostname/Locale prompts
+#                      Fstab/Timezone/Locale
 #└──────────────────────────────  ──────────────────────────────┘
+fstab_file() {
 
+}
+
+timezone_selector() {
+
+}
+
+locale_selector() {
+
+}
 
 
 #┌──────────────────────────────  ──────────────────────────────┐
-#                       Network configuration
+#               Hostname/Users/Bootloader installation
 #└──────────────────────────────  ──────────────────────────────┘
+hostname_selector() {
 
+}
+
+set_usernpasswd() {
+
+}
+
+set_rootpasswd() {
+
+}
+
+grub_installation() {
+
+}
 
 
 # Clean the tty before starting
