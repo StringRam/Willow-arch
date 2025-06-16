@@ -24,15 +24,15 @@ CYAN='\033[36m'
 RESET='\033[0m'
 
 info_print () {
-    echo -e "${BOLD}${GREEN}[ ${YELLOW}•${GREEN} ] ${RESET}"
+    echo -e "${BOLD}${GREEN}[ ${YELLOW}${GREEN} ] $1${RESET}"
 }
 
 input_print () {
-    echo -ne "${BOLD}${YELLOW}[ ${GREEN}•${YELLOW} ] ${RESET}"
+    echo -ne "${BOLD}${YELLOW}[ ${GREEN}${YELLOW} ] $1${RESET}"
 }
 
 error_print () {
-    echo -e "${BOLD}${RED}[ ${BLUE}•${RED} ] ${RESET}"
+    echo -e "${BOLD}${RED}[ ${BLUE}${RED} ] $1${RESET}"
 }
 
 
@@ -81,14 +81,27 @@ check_clock_sync() {
 #┌──────────────────────────────  ──────────────────────────────┐
 #                Disk partitioning, formatting, etc.
 #└──────────────────────────────  ──────────────────────────────┘
+select_disk() {
+    info_print "Available disks:"
+    lsblk -dpno NAME,SIZE,MODEL | grep -v "boot"
+
+    input_print "Enter the disk you want to install Arch on (e.g., /dev/nvme0n1 or /dev/sda): "
+    read -r disk
+    # Basic validation
+    if [[ ! -b "$disk" ]]; then
+        error_print "Invalid disk: $disk"
+        exit 1
+    fi
+
+    info_print "Selected disk: $disk"
+}
+
 partition_disk() {
     input_print "Do you wish to make a custom partition layout? [y/N]: "
     read -r custom
-    custom=${custom,,}  # lowercase conversion
-
     info_print "Partitioning disk $disk..."
 
-    if [[ "$custom" == "y" || "$custom" == "yes" ]]; then
+    if [[ "${custom,,}" =~ ^(yes|y)$ ]]; then
         fdisk "$disk"
         info_print "Custom layout complete."
         lsblk "$disk"
@@ -120,21 +133,34 @@ EOF
     fi
 }
 
-format_partitions() {
-    info_print "Formatting partitions..."
-    mkfs.fat -F32 "$efi_part"
-    mkfs.btrfs "$root_part"
+select_swap_size(){
+
 }
 
-create_btrfs_subvolumes() {
+format_partitions() {
+    input_print "Do you wish to use system encryption [y/N]?: "
+    read -r encryption_response
+    if [[ "${encryption_response,,}" =~ ^(yes|y)$ ]];
+    then
+        cryptsetup -v luksformat $root_part
+        cryptsetup open $root_part root
+    else
+        info_print "Formatting partitions..."
+        mkfs.fat -F32 "$efi_part"
+        mkfs.btrfs "$root_part"
+    fi
+
     info_print "Creating Btrfs subvolumes..."
     mount "$root_part" /mnt
     btrfs subvolume create /mnt/@
     btrfs subvolume create /mnt/@home
+    btrfs subvolume create /mnt/@snapshots
+    btrfs subvolume create /mnt/@var_log
+    btrfs subvolume create /mnt/@swap
     umount /mnt
 }
 
-mount_subvolumes() {
+mount_partitions() {
     info_print "Mounting subvolumes..."
     mount -o compress=zstd,subvol=@ "$root_part" /mnt
     mkdir -p /mnt/home
@@ -208,24 +234,66 @@ grub_installation() {
 # Clean the tty before starting
 clear
 
-# ASCII Font: Patorjk's Cheese
+# ASCII Font: NScript
 echo -ne "${BOLD}${GREEN}
-  _____            ____  ____         ____                _____      _____                       _____        _____         _____    ____   ____ 
- |\    \   _____  |    ||    |       |    |          ____|\    \    |\    \   _____          ___|\    \   ___|\    \    ___|\    \  |    | |    |
- | |    | /    /| |    ||    |       |    |         /     /\    \   | |    | /    /|        /    /\    \ |    |\    \  /    /\    \ |    | |    |
- \/     / |    || |    ||    |       |    |        /     /  \    \  \/     / |    ||       |    |  |    ||    | |    ||    |  |    ||    |_|    |
- /     /_  \   \/ |    ||    |  ____ |    |  ____ |     |    |    | /     /_  \   \/       |    |__|    ||    |/____/ |    |  |____||    .-.    |
-|     // \  \   \ |    ||    | |    ||    | |    ||     |    |    ||     // \  \   \       |    .--.    ||    |\    \ |    |   ____ |    | |    |
-|    |/   \ |    ||    ||    | |    ||    | |    ||\     \  /    /||    |/   \ |    |      |    |  |    ||    | |    ||    |  |    ||    | |    |
-|\ ___/\   \|   /||____||____|/____/||____|/____/|| \_____\/____/ ||\ ___/\   \|   /|      |____|  |____||____| |____||\ ___\/    /||____| |____|
-| |   | \______/ ||    ||    |     |||    |     || \ |    ||    | /| |   | \______/ |      |    |  |    ||    | |    || |   /____/ ||    | |    |
- \|___|/\ |    | ||____||____|_____|/|____|_____|/  \|____||____|/  \|___|/\ |    | |      |____|  |____||____| |____| \|___|    | /|____| |____|
-    \(   \|____|/   \(    \(    )/     \(    )/        \(    )/        \(   \|____|/         \(      )/    \(     )/     \( |____|/   \(     )/  
-     '      )/       '     '    '       '    '          '    '          '      )/             '      '      '     '       '   )/       '     '   
-            '                                                                  '                                              '                  
 
+ ,ggg,      gg      ,gg                                                                ,ggg,                                  
+dP""Y8a     88     ,8P       ,dPYb, ,dPYb,                                            dP""8I                        ,dPYb,    
+Yb, `88     88     d8'       IP'`Yb IP'`Yb                                           dP   88                        IP'`Yb    
+ `"  88     88     88   gg   I8  8I I8  8I                                          dP    88                        I8  8I    
+     88     88     88   ""   I8  8' I8  8'                                         ,8'    88                        I8  8'    
+     88     88     88   gg   I8 dP  I8 dP    ,ggggg,    gg    gg    gg             d88888888    ,gggggg,    ,gggg,  I8 dPgg,  
+     88     88     88   88   I8dP   I8dP    dP"  "Y8ggg I8    I8    88bg     __   ,8"     88    dP""""8I   dP"  "Yb I8dP" "8I 
+     Y8    ,88,    8P   88   I8P    I8P    i8'    ,8I   I8    I8    8I      dP"  ,8P      Y8   ,8'    8I  i8'       I8P    I8 
+      Yb,,d8""8b,,dP  _,88,_,d8b,_ ,d8b,_ ,d8,   ,d8'  ,d8,  ,d8,  ,8I      Yb,_,dP       `8b,,dP     Y8,,d8,_    _,d8     I8,
+       "88"    "88"   8P""Y88P'"Y888P'"Y88P"Y8888P"    P""Y88P""Y88P"        "Y8P"         `Y88P      `Y8P""Y8888PP88P     `Y8
+                                                                                                                              
 ${RESET}"
 
 info_print "Welcome to the Willow-Arch! A somewhat flexible archlinux installation script"
-error_print "Before continuing, a warning: all data on the selected disk will be wiped"
+
+check_uefi
+check_clock_sync
+
+input_print "Warning: this will wipe the selected disk. Continue [y/N]?: "
+read -r disk_response
+if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
+    error_print "Quitting..."
+    exit
+fi
+
+info_print "Please select a disk for partitioning:"
+
+select_disk
+partition_disk
+
+input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
+
+select_swap_size
+format_partitions
+mount_partitions
+
+info_print "Device: $disk properly partitioned, formated and mounted."
+
+kernel_selector
+microcode_detector
+reflector_conf
+package_install
+
+fstab_file
+arch-chroot /mnt
+timezone_selector
+locale_selector
+hostname_selector
+
+info_print "Configuring /etc/mkinitcpio.conf."
+cat > /mnt/etc/mkinitcpio.conf <<EOF
+HOOKS=(systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems)
+EOF
+info_print "Recreating intramfs image..."
+mkinitcpio -P
+
+set_usernpasswd
+set_rootpasswd
+grub_installation
 
