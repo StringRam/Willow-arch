@@ -291,4 +291,3 @@ EOF
 fi
 
 arch-chroot /mnt
-
