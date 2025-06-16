@@ -222,10 +222,6 @@ set_rootpasswd() {
 
 }
 
-grub_installation() {
-
-}
-
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                       Installation process
@@ -281,19 +277,18 @@ reflector_conf
 package_install
 
 fstab_file
-arch-chroot /mnt
 timezone_selector
 locale_selector
 hostname_selector
-
-info_print "Configuring /etc/mkinitcpio.conf."
-cat > /mnt/etc/mkinitcpio.conf <<EOF
-HOOKS=(systemd autodetect keyboard sd-vconsole modconf block sd-encrypt filesystems)
-EOF
-info_print "Recreating intramfs image..."
-mkinitcpio -P
-
 set_usernpasswd
 set_rootpasswd
-grub_installation
+
+if [[ "${encryption_response,,}" =~ ^(yes|y)$ ]]; then
+    info_print "Configuring /etc/mkinitcpio.conf."
+    cat > /mnt/etc/mkinitcpio.conf <<EOF
+HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt lvm2 filesystems fsck)
+EOF
+fi
+
+arch-chroot /mnt
 
