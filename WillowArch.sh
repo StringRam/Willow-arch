@@ -20,7 +20,7 @@ YELLOW='\033[33m'
 BLUE='\033[34m'
 MAGENTA='\033[35m'
 CYAN='\033[36m'
-## Reset color
+# Reset color
 RESET='\033[0m'
 
 info_print () {
@@ -85,15 +85,17 @@ select_disk() {
     info_print "Available disks:"
     lsblk -dpno NAME,SIZE,MODEL | grep -v "boot"
 
-    input_print "Enter the disk you want to install Arch on (e.g., /dev/nvme0n1 or /dev/sda): "
-    read -r disk
-    # Basic validation
-    if [[ ! -b "$disk" ]]; then
-        error_print "Invalid disk: $disk"
-        exit 1
-    fi
-
-    info_print "Selected disk: $disk"
+    PS3="Select the disk you want to install Arch on (e.g. 1): "
+    select disk in $(lsblk -dpno NAME | grep -v "boot"); do
+        if [[ -b $disk ]]; then
+            info_print "Selected disk: $disk"
+            break
+        else
+            error_print "Invalid selection."
+        fi
+    done
+    info_print "Informing kernel about disk changes..."
+    partprobe "$disk" || udevadm settle
 }
 
 partition_disk() {
@@ -127,37 +129,69 @@ t
 23
 w
 EOF
-        efi_part="${disk}p1"
-        root_part="${disk}p2"
+        efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
+        root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
         info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
     fi
 }
 
-select_swap_size(){
+set_luks_passwd() {
+    input_print "Enter your LUKS container password (for security purposes you won't see it): "
+    read -r -s encryption_passwd
+    if [[ -z $encryption_passwd ]]; then
+        echo
+        error_print "You must enter a password for the LUKS container. Try again"
+        return 1
+    fi
 
+    input_print "Enter your LUKS container password again (for security purposes you won't see it): "
+    read -r -s encryption_passwd2
+    if [[ $encryption_passwd != $encryption_passwd2 ]]; then
+        error_print "Passwords don't match, try again"
+        return 1
+    fi
+
+    return 0
 }
 
 format_partitions() {
+    input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
+    read -r swap_size
+
+    info_print "Formatting partitions..."
+    mkfs.fat -F32 "$efi_part" &>/dev/null
+
     input_print "Do you wish to use system encryption [y/N]?: "
     read -r encryption_response
     if [[ "${encryption_response,,}" =~ ^(yes|y)$ ]];
     then
-        cryptsetup -v luksformat $root_part
-        cryptsetup open $root_part root
+        info_print "Wiping $root_part..."
+        cryptsetup open --type plain --key-file /dev/urandom --sector-size 4096 "$root_part" wipecrypt
+        dd if=/dev/zero of=/dev/mapper/wipecrypt status=progress bs=1M
+        cryptsetup close wipecrypt
+        info_print "Wiping process complete."
+
+        until set_luks_passwd; do : ; done
+
+        echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
+        echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
+        root_part=/dev/mapper/root
+        mkfs.btrfs "$root_part" &>/dev/null
     else
-        info_print "Formatting partitions..."
-        mkfs.fat -F32 "$efi_part"
-        mkfs.btrfs "$root_part"
+        mkfs.btrfs "$root_part" &>/dev/null
     fi
+
+    info_print "Creating swap file..."
+    btrfs subvolume create /mnt/@swap
 
     info_print "Creating Btrfs subvolumes..."
     mount "$root_part" /mnt
-    btrfs subvolume create /mnt/@
-    btrfs subvolume create /mnt/@home
-    btrfs subvolume create /mnt/@snapshots
-    btrfs subvolume create /mnt/@var_log
-    btrfs subvolume create /mnt/@swap
+    subvols=(snapshots var_log home root)
+    for subvol in '' "${subvols[@]}"; do
+        btrfs su cr /mnt/@"$subvol" &>/dev/null
+    done
     umount /mnt
+    info_print "Subvolumes created successfully"
 }
 
 mount_partitions() {
@@ -165,8 +199,8 @@ mount_partitions() {
     mount -o compress=zstd,subvol=@ "$root_part" /mnt
     mkdir -p /mnt/home
     mount -o compress=zstd,subvol=@home "$root_part" /mnt/home
-    mkdir -p /mnt/efi
-    mount "$efi_part" /mnt/efi
+
+    mount --mkdir "$efi_part" /mnt/boot
 }
 
 
@@ -262,31 +296,27 @@ info_print "Please select a disk for partitioning:"
 
 select_disk
 partition_disk
-
-input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
-
-select_swap_size
 format_partitions
 mount_partitions
 
 info_print "Device: $disk properly partitioned, formated and mounted."
 
-kernel_selector
+until kernel_selector; do : ; done
 microcode_detector
 reflector_conf
 package_install
 
 fstab_file
 timezone_selector
-locale_selector
-hostname_selector
-set_usernpasswd
-set_rootpasswd
+until locale_selector; do : ; done
+until hostname_selector; do : ; done
+until set_usernpasswd; do : ; done
+until set_rootpasswd; do : ; done
 
 if [[ "${encryption_response,,}" =~ ^(yes|y)$ ]]; then
     info_print "Configuring /etc/mkinitcpio.conf."
     cat > /mnt/etc/mkinitcpio.conf <<EOF
-HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt lvm2 filesystems fsck)
+HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt lvm2 filesystems fsck grub-btrfs-overlayfs)
 EOF
 fi
 
