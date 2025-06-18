@@ -3,7 +3,7 @@
 # Willow Archlinux installation script for personal use.
 # This set up uses a GPT partition table: p1 EFI_System 512Mb
 #                                         p2 Linux_root(x86-64)
-#   *BTRFS root partition
+#   *root_part root partition
 #   *@root, @home, @var_log, @snapshots and @swap subvolumes(can opt out of snapshots)
 #   *Manual swap file size
 #   *Optional LUKS system encryption
@@ -181,26 +181,33 @@ format_partitions() {
         mkfs.btrfs "$root_part" &>/dev/null
     fi
 
-    info_print "Creating swap file..."
-    btrfs subvolume create /mnt/@swap
-
     info_print "Creating Btrfs subvolumes..."
     mount "$root_part" /mnt
-    subvols=(snapshots var_log home root)
+    subvols=(snapshots swap var_log home root)
     for subvol in '' "${subvols[@]}"; do
         btrfs su cr /mnt/@"$subvol" &>/dev/null
     done
+
     umount /mnt
     info_print "Subvolumes created successfully"
 }
 
 mount_partitions() {
     info_print "Mounting subvolumes..."
-    mount -o compress=zstd,subvol=@ "$root_part" /mnt
-    mkdir -p /mnt/home
-    mount -o compress=zstd,subvol=@home "$root_part" /mnt/home
-
-    mount --mkdir "$efi_part" /mnt/boot
+    mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
+    
+    mount -o "$mountopts",subvol=@ "$root_part" /mnt
+    mkdir -p /mnt/{home,root,.snapshots,var/log,boot}
+    for subvol in "${subvols[@]:1}"; do
+        mount -o "$mountopts",subvol=@"$subvol" "$root_part" /mnt/"${subvol//_//}"
+    done
+    chmod 750 /mnt/root
+    mount -o "$mountopts",subvol=@snapshots "$root_part" /mnt/.snapshots
+    chattr +C /mnt/var/log
+    mount "$efi_part" /mnt/boot/
+    info_print "Creating swap file..."
+    btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /swap/swapfile
+    swapon /swap/swapfile
 }
 
 
@@ -229,7 +236,7 @@ package_install() {
 #                      Fstab/Timezone/Locale
 #└──────────────────────────────  ──────────────────────────────┘
 fstab_file() {
-
+    
 }
 
 timezone_selector() {
