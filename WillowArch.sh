@@ -206,8 +206,9 @@ mount_partitions() {
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot/
     info_print "Creating swap file..."
-    btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /swap/swapfile
-    swapon /swap/swapfile
+    chattr +C /mnt/swap
+    btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/swap/swapfile
+    swapon /mnt/swap/swapfile
 }
 
 
