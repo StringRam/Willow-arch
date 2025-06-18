@@ -197,7 +197,7 @@ mount_partitions() {
     mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
     
     mount -o "$mountopts",subvol=@ "$root_part" /mnt
-    mkdir -p /mnt/{home,root,.snapshots,var/log,boot}
+    mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
     for subvol in "${subvols[@]:1}"; do
         mount -o "$mountopts",subvol=@"$subvol" "$root_part" /mnt/"${subvol//_//}"
     done
