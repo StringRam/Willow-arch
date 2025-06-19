@@ -162,26 +162,18 @@ format_partitions() {
     info_print "Formatting partitions..."
     mkfs.fat -F32 "$efi_part" &>/dev/null
 
-    input_print "Do you wish to use system encryption [y/N]?: "
-    read -r encryption_response
-    if [[ "${encryption_response,,}" =~ ^(yes|y)$ ]];
-    then
-        info_print "Wiping $root_part..."
-        cryptsetup open --type plain --key-file /dev/urandom --sector-size 4096 "$root_part" wipecrypt
-        dd if=/dev/zero of=/dev/mapper/wipecrypt status=progress bs=1M
-        cryptsetup close wipecrypt
-        info_print "Wiping process complete."
+    info_print "Wiping $root_part..."
+    cryptsetup open --type plain --key-file /dev/urandom --sector-size 4096 "$root_part" wipecrypt
+    dd if=/dev/zero of=/dev/mapper/wipecrypt status=progress bs=1M
+    cryptsetup close wipecrypt
+    info_print "Wiping process complete."
 
-        until set_luks_passwd; do : ; done
+    until set_luks_passwd; do : ; done
 
-        echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
-        echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
-        BTRFS=/dev/mapper/root
-        mkfs.btrfs "$BTRFS" &>/dev/null
-    else
-        error_print "Quitting..."
-        exit
-    fi
+    echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
+    echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
+    BTRFS=/dev/mapper/root
+    mkfs.btrfs "$BTRFS" &>/dev/null
 
     info_print "Creating Btrfs subvolumes..."
     mount "$BTRFS" /mnt
