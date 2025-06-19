@@ -59,6 +59,7 @@
 ├── @var_log        → /var/log
 ├── @snapshots      → /.snapshots
 └── @swap           → /swap
+```
 
 MIT License
 © 2025 Mateo Correa Franco
