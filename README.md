@@ -82,9 +82,11 @@ chmod +x willow.sh
 You'll be guided through:
 
 - Disk selection and formatting  
-- Optional full-disk encryption  
+- Full-disk encryption  
 - Kernel and package selection  
-- Localization and user setup  
+- Localization and user setup
+
+Please check the [arch wiki](https://wiki.archlinux.org) out for more info.
 
 > ⚠️ **Make sure you're running from a live Arch Linux environment with internet access.**
 
