@@ -8,6 +8,7 @@
 #   *Manual swap file size
 #   *Optional LUKS system encryption
 #
+# Credits to classy-giraffe for his script.
 # MIT License Copyright (c) 2025 Mateo Correa Franco
 
 #┌──────────────────────────────  ──────────────────────────────┐
@@ -175,14 +176,15 @@ format_partitions() {
 
         echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
         echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
-        root_part=/dev/mapper/root
-        mkfs.btrfs "$root_part" &>/dev/null
+        BTRFS=/dev/mapper/root
+        mkfs.btrfs "$BTRFS" &>/dev/null
     else
-        mkfs.btrfs "$root_part" &>/dev/null
+        error_print "Quitting..."
+        exit
     fi
 
     info_print "Creating Btrfs subvolumes..."
-    mount "$root_part" /mnt
+    mount "$BTRFS" /mnt
     subvols=(snapshots swap var_log home root)
     for subvol in '' "${subvols[@]}"; do
         btrfs su cr /mnt/@"$subvol" &>/dev/null
@@ -196,13 +198,13 @@ mount_partitions() {
     info_print "Mounting subvolumes..."
     mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
     
-    mount -o "$mountopts",subvol=@ "$root_part" /mnt
+    mount -o "$mountopts",subvol=@ "$BTRFS" /mnt
     mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
     for subvol in "${subvols[@]:1}"; do
-        mount -o "$mountopts",subvol=@"$subvol" "$root_part" /mnt/"${subvol//_//}"
+        mount -o "$mountopts",subvol=@"$subvol" "$BTRFS" /mnt/"${subvol//_//}"
     done
     chmod 750 /mnt/root
-    mount -o "$mountopts",subvol=@snapshots "$root_part" /mnt/.snapshots
+    mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot/
     info_print "Creating swap file..."
@@ -274,15 +276,57 @@ package_install() {
 #                      Fstab/Timezone/Locale
 #└──────────────────────────────  ──────────────────────────────┘
 fstab_file() {
+    info_print "Generating fstab file..."
+    genfstab -U /mnt >> /mnt/etc/fstab
     
-}
+    if ! grep -q "^/swap/swapfile" /mnt/etc/fstab; then
+        info_print "Adding swapfile entry to fstab..."
+        echo "/swap/swapfile none swap defaults 0 0" >> /mnt/etc/fstab
+    fi
 
-timezone_selector() {
-
+    echo
+    info_print "Here is the final /etc/fstab content:"
+    echo "------------------------------------------------------------"
+    cat /mnt/etc/fstab
+    echo "------------------------------------------------------------"
 }
 
 locale_selector() {
+    input_print "Please insert the locale you use (format: xx_XX. Enter empty to use en_US, or \"/\" to search locales): " locale
+    read -r locale
+    case "$locale" in
+        '') locale="en_US.UTF-8"
+            info_print "$locale will be the default locale."
+            return 0;;
+        '/') sed -E '/^# +|^#$/d;s/^#| *$//g;s/ .*/ (Charset:&)/' /etc/locale.gen | less -M
+                clear
+                return 1;;
+        *)  if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<< "$locale") " /etc/locale.gen; then
+                error_print "The specified locale doesn't exist or isn't supported."
+                return 1
+            fi
+            return 0
+    esac
+}
 
+keyboard_selector() {
+    input_print "Please insert the keyboard layout to use in console (enter empty to use US, or \"/\" to look up for keyboard layouts): "
+    read -r kblayout
+    case "$kblayout" in
+        '') kblayout="us"
+            info_print "The standard US keyboard layout will be used."
+            return 0;;
+        '/') localectl list-keymaps
+             clear
+             return 1;;
+        *) if ! localectl list-keymaps | grep -Fxq "$kblayout"; then
+               error_print "The specified keymap doesn't exist."
+               return 1
+           fi
+        info_print "Changing console layout to $kblayout."
+        loadkeys "$kblayout"
+        return 0
+    esac
 }
 
 
@@ -392,12 +436,25 @@ until kernel_selector; do : ; done
 microcode_detector
 package_install
 
-fstab_file
-timezone_selector
 until locale_selector; do : ; done
 until hostname_selector; do : ; done
 until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
+
+echo "$hostname" > /mnt/etc/hostname
+
+fstab_file
+
+sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
+echo "LANG=$locale" > /mnt/etc/locale.conf
+echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
+
+info_print "Setting hosts file."
+cat > /mnt/etc/hosts <<EOF
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   $hostname.localdomain   $hostname
+EOF
 
 if [[ "${encryption_response,,}" =~ ^(yes|y)$ ]]; then
     info_print "Configuring /etc/mkinitcpio.conf."
@@ -406,4 +463,78 @@ HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block 
 EOF
 fi
 
-arch-chroot /mnt
+info_print "Setting up grub config."
+UUID=$(blkid -s UUID -o value $root_part)
+sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
+
+info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
+arch-chroot /mnt /bin/bash -e <<EOF
+
+    # Setting up timezone.
+    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime &>/dev/null
+
+    # Setting up clock.
+    hwclock --systohc
+
+    # Generating locales.
+    locale-gen &>/dev/null
+
+    # Generating a new initramfs.
+    mkinitcpio -P &>/dev/null
+
+    # Snapper configuration.
+    umount /.snapshots
+    rm -r /.snapshots
+    snapper --no-dbus -c root create-config /
+    btrfs subvolume delete /.snapshots &>/dev/null
+    mkdir /.snapshots
+    mount -a &>/dev/null
+    chmod 750 /.snapshots
+
+    # Installing GRUB.
+    grub-install --target=x86_64-efi --efi-directory=/boot/ --bootloader-id=GRUB &>/dev/null
+
+    # Creating grub config file.
+    grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
+
+EOF
+
+info_print "Setting root password."
+echo "root:$rootpasswd" | arch-chroot /mnt chpasswd
+
+if [[ -n "$username" ]]; then
+    echo "%wheel ALL=(ALL:ALL) ALL" > /mnt/etc/sudoers.d/wheel
+    info_print "Adding the user $username to the system with root privilege."
+    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
+    info_print "Setting user password for $username."
+    echo "$username:$userpasswd" | arch-chroot /mnt chpasswd
+fi
+
+info_print "Configuring /boot backup when pacman transactions are made."
+mkdir /mnt/etc/pacman.d/hooks
+cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
+[Trigger]
+Operation = Upgrade
+Operation = Install
+Operation = Remove
+Type = Path
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Depends = rsync
+Description = Backing up /boot...
+When = PostTransaction
+Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
+EOF
+
+info_print "Enabling colours, animations, and parallel downloads for pacman."
+sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
+
+info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
+services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
+for service in "${services[@]}"; do
+    systemctl enable "$service" --root=/mnt &>/dev/null
+done
+
+info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
+exit
