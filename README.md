@@ -15,7 +15,7 @@
 - Custom kernel selection: `linux`, `lts`, `zen`, or `hardened`
 
 ┌──────────────────────────────  ──────────────────────────────┐
-                          **Disk Setup**
+                          ##**Disk Setup**
 └──────────────────────────────  ──────────────────────────────┘
 - Full-disk **LUKS encryption**
 - GPT partition table
