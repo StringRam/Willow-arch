@@ -216,15 +216,45 @@ mount_partitions() {
 #                       Packages installation
 #└──────────────────────────────  ──────────────────────────────┘
 kernel_selector() {
-    
+    info_print "List of kernels:"
+    info_print "1) Stable: Vanilla Linux kernel with a few specific Arch Linux patches applied"
+    info_print "2) Hardened: A security-focused Linux kernel"
+    info_print "3) Longterm: Long-term support (LTS) Linux kernel"
+    info_print "4) Zen Kernel: A Linux kernel optimized for desktop usage"
+    input_print "Please select the number of the corresponding kernel (e.g. 1): " 
+    read -r kernel_choice
+    case $kernel_choice in
+        1 ) kernel="linux"
+            return 0;;
+        2 ) kernel="linux-hardened"
+            return 0;;
+        3 ) kernel="linux-lts"
+            return 0;;
+        4 ) kernel="linux-zen"
+            return 0;;
+        * ) error_print "You did not enter a valid selection, please try again."
+            return 1
+    esac
 }
 
 microcode_detector() {
-
+    CPU=$(grep vendor_id /proc/cpuinfo)
+    if [[ "$CPU" == *"AuthenticAMD"* ]]; then
+        info_print "An AMD CPU has been detected, the AMD microcode will be installed."
+        microcode="amd-ucode"
+    else
+        info_print "An Intel CPU has been detected, the Intel microcode will be installed."
+        microcode="intel-ucode"
+    fi
 }
 
 package_install() {
+    info_print "Reading package list..."
+    mapfile -t packages < pkglist.txt
+    packages+=("$kernel" "$microcode")
 
+    info_print "Installing packages: "
+    pacstrap -K /mnt "${packages[@]}"
 }
 
 
