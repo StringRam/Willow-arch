@@ -1,65 +1,87 @@
+#┌──────────────────────────────  ──────────────────────────────┐
+#                             (Fonts)
+#└──────────────────────────────  ──────────────────────────────┘
 adobe-source-han-sans-cn-fonts
 adobe-source-han-sans-jp-fonts
 adobe-source-han-sans-kr-fonts
+ttf-jetbrains-mono-nerd
+otf-font-awesome
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                           (Base System)
+#└──────────────────────────────  ──────────────────────────────┘
 base
 base-devel
-blueman
-bluez
+linux-firmware
+man-db
+man-pages
+texinfo
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                            (Utilities)
+#└──────────────────────────────  ──────────────────────────────┘
 brightnessctl
-cliphist
 dosfstools
 efibootmgr
-eog
-fastfetch
-firefox
-foliate
 git
+nano
+reflector
+sudo
+zsh
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                         (Desktop & GUI)
+#└──────────────────────────────  ──────────────────────────────┘
+firefox
+nautilus
+eog
 gnome-calculator
 gnome-disk-utility
 gnome-keyring
 gnome-system-monitor
-grub
-hypridle
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                       (Audio & Multimedia)
+#└──────────────────────────────  ──────────────────────────────┘
+pavucontrol
+pipewire
+pipewire-pulse
+wireplumber
+imagemagick
+foliate
+obsidian
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                           (Networking)
+#└──────────────────────────────  ──────────────────────────────┘
+blueman
+bluez
+network-manager-applet
+networkmanager
+ufw
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                     (Window Manager & Shell)
+#└──────────────────────────────  ──────────────────────────────┘
 hyprland
+hypridle
 hyprlock
 hyprpicker
 hyprshot
 hyprsunset
-i2c-tools
-imagemagick
-kitty
-libreoffice-fresh
-linux-firmware
-man-db
-man-pages
-nano
-nautilus
-network-manager-applet
-networkmanager
-nwg-look
-obsidian
-openrgb
-otf-font-awesome
-pavucontrol
-pipewire
-pipewire-pulse
-polkit-gnome
-qbittorrent
-qt5-wayland
-qt6-wayland
-reflector
-rofi-wayland
-snapshot
-sudo
 swaync
-swww
-texinfo
-ttf-jetbrains-mono-nerd
-ufw
-uwsm
-valgrind
+rofi-wayland
 waybar
-wireplumber
 xdg-desktop-portal-hyprland
 xdg-user-dirs
-zsh
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                        (Development Tools)
+#└──────────────────────────────  ──────────────────────────────┘
+valgrind
+
+#┌──────────────────────────────  ──────────────────────────────┐
+#                          (Miscellaneous)
+#└──────────────────────────────  ──────────────────────────────┘
+openrgb
+cliphist
