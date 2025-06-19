@@ -1,7 +1,8 @@
-![](https://img.shields.io/github/downloads/StringRam/Willow-arch/total?label=📦%20Downloads)  
-![](https://img.shields.io/github/license/StringRam/Willow-arch?label=📄%20License)  
-![](https://img.shields.io/github/stars/StringRam/Willow-arch?label=⭐%20Stars)  
-![](https://img.shields.io/github/forks/StringRam/Willow-arch?label=🍴%20Forks)
+![📦 Downloads](https://img.shields.io/github/downloads/StringRam/Willow-arch/total?label=📦%20Downloads)
+![📄 License](https://img.shields.io/github/license/StringRam/Willow-arch?label=📄%20License)
+![⭐ Stars](https://img.shields.io/github/stars/StringRam/Willow-arch?label=⭐%20Stars)
+![🍴 Forks](https://img.shields.io/github/forks/StringRam/Willow-arch?label=🍴%20Forks)
+
 
 # 🌿 Willow-Arch
 
