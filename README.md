@@ -5,7 +5,7 @@
 
 # 🌿 Willow-Arch
 
-*A flexible and minimalist Arch Linux installation script — tailored for personal and public use.*
+*A flexible and simple Arch Linux installation script. Made for personal and public use.*
 
 ---
 
