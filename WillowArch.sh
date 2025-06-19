@@ -215,11 +215,6 @@ mount_partitions() {
 #┌──────────────────────────────  ──────────────────────────────┐
 #                       Packages installation
 #└──────────────────────────────  ──────────────────────────────┘
-reflector_conf() {
-    info_print 'Running reflector to generate mirrorlist'
-    
-}
-
 kernel_selector() {
     
 }
@@ -311,7 +306,6 @@ info_print "Device: $disk properly partitioned, formated and mounted."
 
 until kernel_selector; do : ; done
 microcode_detector
-reflector_conf
 package_install
 
 fstab_file
