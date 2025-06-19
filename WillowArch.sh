@@ -6,7 +6,7 @@
 #   *root_part root partition
 #   *@root, @home, @var_log, @snapshots and @swap subvolumes(can opt out of snapshots)
 #   *Manual swap file size
-#   *Optional LUKS system encryption
+#   *LUKS system encryption
 #
 # Credits to classy-giraffe for his script.
 # MIT License Copyright (c) 2025 Mateo Correa Franco
