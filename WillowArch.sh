@@ -248,12 +248,24 @@ microcode_detector() {
     fi
 }
 
-package_install() {
-    info_print "Reading package list..."
-    mapfile -t packages < pkglist.txt
-    packages+=("$kernel" "$microcode")
+read_pkglist() {
+    local pkgfile="pkglist.txt"
+    packages=()
 
-    info_print "Installing packages: "
+    while IFS= read -r line || [[ -n $line ]]; do
+        # Skip empty lines and comment lines starting with #
+        [[ -z "$line" || "$line" =~ ^# ]] && continue
+        packages+=("$line")
+    done < "$pkgfile"
+
+    info_print "Loaded ${#packages[@]} packages from $pkgfile"
+}
+
+package_install() {
+    read_pkglist
+    packages+=("$kernel" "$kernel-headers" "$microcode")
+
+    info_print "Installing packages: ${packages[*]}"
     pacstrap -K /mnt "${packages[@]}"
 }
 
@@ -278,15 +290,57 @@ locale_selector() {
 #               Hostname/Users/Bootloader installation
 #└──────────────────────────────  ──────────────────────────────┘
 hostname_selector() {
-
+    input_print "Please enter the hostname: "
+    read -r hostname
+    if [[ -z "$hostname" ]]; then
+        error_print "You need to enter a hostname in order to continue."
+        return 1
+    fi
+    return 0
 }
 
 set_usernpasswd() {
-
+    input_print "Please enter name for a user account (enter empty to not create one): "
+    read -r username
+    if [[ -z "$username" ]]; then
+        return 0
+    fi
+    input_print "Please enter a password for $username (you're not going to see the password): "
+    read -r -s userpasswd
+    if [[ -z "$userpasswd" ]]; then
+        echo
+        error_print "You need to enter a password for $username, please try again."
+        return 1
+    fi
+    echo
+    input_print "Please enter the password again (you're not going to see it): " 
+    read -r -s userpasswd2
+    echo
+    if [[ "$userpasswd" != "$userpasswd2" ]]; then
+        echo
+        error_print "Passwords don't match, please try again."
+        return 1
+    fi
+    return 0
 }
 
 set_rootpasswd() {
-
+    input_print "Please enter a password for the root user (you're not going to see it): "
+    read -r -s rootpasswd
+    if [[ -z "$rootpasswd" ]]; then
+        echo
+        error_print "You need to enter a password for the root user, please try again."
+        return 1
+    fi
+    echo
+    input_print "Please enter the password again (you're not going to see it): " 
+    read -r -s rootpasswd2
+    echo
+    if [[ "$rootpasswd" != "$rootpasswd2" ]]; then
+        error_print "Passwords don't match, please try again."
+        return 1
+    fi
+    return 0
 }
 
 
