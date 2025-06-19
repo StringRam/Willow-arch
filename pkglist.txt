@@ -22,13 +22,18 @@ texinfo
 #└──────────────────────────────  ──────────────────────────────┘
 brightnessctl
 dosfstools
+grub
 efibootmgr
 git
 nano
 reflector
 sudo
 zsh
-
+btrfs-progs 
+grub-btrfs
+rsync
+snapper
+snap-pac
 #┌──────────────────────────────  ──────────────────────────────┐
 #                         (Desktop & GUI)
 #└──────────────────────────────  ──────────────────────────────┘
