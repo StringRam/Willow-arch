@@ -48,7 +48,7 @@
 ---
 
 ## 🧪 Work In Progress
-- Gaming-oriented setup profiles  
+- Gaming related configs 
 - Dotfile sync and integration  
 
 ---
