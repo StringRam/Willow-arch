@@ -200,9 +200,13 @@ mount_partitions() {
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot/
     info_print "Creating swap file..."
-    chattr +C /mnt/swap
-    btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/swap/swapfile
-    swapon /mnt/swap/swapfile
+    if [[ "$swap_size" != "0" ]]; then
+        chattr +C /mnt/swap
+        btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/swap/swapfile
+        swapon /mnt/swap/swapfile
+    else
+        info_print "No swap file will be created."
+    fi
 }
 
 
@@ -429,6 +433,7 @@ microcode_detector
 package_install
 
 until locale_selector; do : ; done
+until keyboard_selector; do : ; done
 until hostname_selector; do : ; done
 until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
@@ -494,7 +499,7 @@ if [[ -n "$username" ]]; then
 fi
 
 info_print "Configuring /boot backup when pacman transactions are made."
-mkdir /mnt/etc/pacman.d/hooks
+mkdir -p /mnt/etc/pacman.d/hooks
 cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
 [Trigger]
 Operation = Upgrade
@@ -512,6 +517,9 @@ EOF
 
 info_print "Enabling colours, animations, and parallel downloads for pacman."
 sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
+
+info_print "Enabling multilib repository in pacman.conf."
+sed -i '/^\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
 
 info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
