@@ -4,7 +4,7 @@
 # This set up uses a GPT partition table: p1 EFI_System 512Mb
 #                                         p2 Linux_root(x86-64)
 #   *root_part root partition
-#   *@root, @home, @var_log, @snapshots and @swap subvolumes(can opt out of snapshots)
+#   *@root, @home, @var_log, @snapshots and @swap subvolumes
 #   *Manual swap file size
 #   *LUKS system encryption
 #
