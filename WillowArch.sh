@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 # Willow Archlinux installation script for personal use.
 # This set up uses a GPT partition table: p1 EFI_System 512Mb
@@ -177,9 +177,13 @@ format_partitions() {
 
     info_print "Creating Btrfs subvolumes..."
     mount "$BTRFS" /mnt
-    subvols=(snapshots swap var_log home root)
-    for subvol in '' "${subvols[@]}"; do
-        btrfs su cr /mnt/@"$subvol" &>/dev/null
+    subvols=( "" home var_log snapshots swap )
+    for subvol in "${subvols[@]}"; do
+        if [[ -z "$subvol" ]]; then
+            btrfs su cr /mnt/@
+        else
+            btrfs su cr /mnt/@$subvol
+        fi
     done
 
     umount /mnt
@@ -192,15 +196,19 @@ mount_partitions() {
     
     mount -o "$mountopts",subvol=@ "$BTRFS" /mnt
     mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
-    for subvol in "${subvols[@]:1}"; do
-        mount -o "$mountopts",subvol=@"$subvol" "$BTRFS" /mnt/"${subvol//_//}"
-    done
-    chmod 750 /mnt/root
+
+    mount -o "$mountopts",subvol=@home "$BTRFS" /mnt/home
+    mount -o "$mountopts",subvol=@var_log "$BTRFS" /mnt/var/log
     mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
+    mount -o "$mountopts",subvol=@swap "$BTRFS" /mnt/swap
+
+    chmod 750 /mnt/root
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot/
+
     info_print "Creating swap file..."
     if [[ "$swap_size" != "0" ]]; then
+        mkdir -p /mnt/swap
         chattr +C /mnt/swap
         btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/swap/swapfile
         swapon /mnt/swap/swapfile

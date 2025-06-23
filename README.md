@@ -73,11 +73,11 @@ cd Willow-arch
 ```
 ### 2.Make the script executable
 ```bash
-chmod +x willow.sh
+chmod +x WillowArch.sh
 ```
 ### 3.Run the script
 ```bash
-./willow.sh
+./WillowArch.sh
 ```
 You'll be guided through:
 
