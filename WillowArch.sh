@@ -254,6 +254,37 @@ microcode_detector() {
     fi
 }
 
+aur_helper_selector() {
+    input_print "Choose an AUR helper to install (yay/paru, leave empty to skip): "
+    read -r aur_helper
+    case "$aur_helper" in
+        yay|paru)
+            info_print "AUR helper $aur_helper will be installed for user $username."
+            ;;
+        '')
+            info_print "No AUR helper will be installed."
+            return 1
+            ;;
+        *)
+            error_print "Invalid choice. Supported: yay, paru, trizen."
+            return 1
+            ;;
+    esac
+    return 0
+}
+
+install_aur_helper() {
+    [[ -z "$aur_helper" || -z "$username" ]] && return
+    arch-chroot /mnt /bin/bash -c "
+        sudo -u $username bash -c '
+            cd ~
+            git clone https://aur.archlinux.org/$aur_helper.git
+            cd $aur_helper
+            makepkg -si --noconfirm
+        '
+    "
+}
+
 read_pkglist() {
     local pkgfile="pkglist.txt"
     packages=()
@@ -528,6 +559,9 @@ sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/e
 
 info_print "Enabling multilib repository in pacman.conf."
 sed -i '/^\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
+
+until aur_helper_selector; do : ; done
+install_aur_helper
 
 info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
