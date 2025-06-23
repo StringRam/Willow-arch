@@ -255,18 +255,22 @@ microcode_detector() {
 }
 
 aur_helper_selector() {
+    info_print "AUR helpers are used to install packages from the Arch User Repository (AUR)."
+    error_print "If skipped, Re-greetd and Hyprland will not be set up for autologin."
     input_print "Choose an AUR helper to install (yay/paru, leave empty to skip): "
     read -r aur_helper
     case "$aur_helper" in
         yay|paru)
+            aur_bool=1
             info_print "AUR helper $aur_helper will be installed for user $username."
             ;;
         '')
+            aur_bool=0
             info_print "No AUR helper will be installed."
             return 1
             ;;
         *)
-            error_print "Invalid choice. Supported: yay, paru, trizen."
+            error_print "Invalid choice. Supported: yay, paru."
             return 1
             ;;
     esac
@@ -283,6 +287,22 @@ install_aur_helper() {
             makepkg -si --noconfirm
         '
     "
+}
+
+setup_greetd_hyprland() {
+    arch-chroot /mnt /bin/bash -c "
+        $aur_helper -S --noconfirm greetd-regreet-git
+        mkdir -p /etc/greetd
+        cat > /etc/greetd/config.toml <<EOF
+[terminal]
+vt = 1
+
+[default_session]
+command = \"Hyprland\"
+user = \"$username\"
+EOF
+    "
+    info_print "Re-greetd & Hyprland have been set up for autologin."
 }
 
 read_pkglist() {
@@ -379,10 +399,10 @@ hostname_selector() {
 }
 
 set_usernpasswd() {
-    input_print "Please enter name for a user account (enter empty to not create one): "
+    input_print "Please enter name for a user account: "
     read -r username
     if [[ -z "$username" ]]; then
-        return 0
+        return 1
     fi
     input_print "Please enter a password for $username (you're not going to see the password): "
     read -r -s userpasswd
@@ -561,10 +581,13 @@ info_print "Enabling multilib repository in pacman.conf."
 sed -i '/^\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
 
 until aur_helper_selector; do : ; done
-install_aur_helper
+if [[ $aur_bool -eq 1 ]]; then
+    install_aur_helper
+    setup_greetd_hyprland
+fi
 
 info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
-services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
+services=(greetd reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
