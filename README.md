@@ -7,7 +7,6 @@
 
 *A flexible and simple Arch Linux installation script. Made for personal and public use.*
 
----
 
 ## Features
 
@@ -45,13 +44,11 @@
 - Color-coded output  
 - Clear section titles and separators
 
----
 
 ## 🧪 Work In Progress
 - Gaming related configs 
 - Dotfile sync and integration  
 
----
 
 ## 🗂️ Btrfs Subvolume Layout
 
@@ -90,14 +87,12 @@ Please check the [arch wiki](https://wiki.archlinux.org) out for more info.
 
 > ⚠️ **Make sure you're running from a live Arch Linux environment with internet access.**
 
----
 
 ## 🤝 Contributions
 
 Contributions, suggestions, and constructive feedback are welcome.  
 Feel free to open an issue or pull request.
 
----
 
 ## 📜 License
 
