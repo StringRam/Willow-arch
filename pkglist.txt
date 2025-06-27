@@ -34,6 +34,7 @@ grub-btrfs
 rsync
 snapper
 snap-pac
+
 #┌──────────────────────────────  ──────────────────────────────┐
 #                         (Desktop & GUI)
 #└──────────────────────────────  ──────────────────────────────┘
@@ -44,6 +45,8 @@ gnome-calculator
 gnome-disk-utility
 gnome-keyring
 gnome-system-monitor
+foliate
+obsidian
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                       (Audio & Multimedia)
@@ -53,8 +56,6 @@ pipewire
 pipewire-pulse
 wireplumber
 imagemagick
-foliate
-obsidian
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                           (Networking)

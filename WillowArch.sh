@@ -1,10 +1,10 @@
-#! /usr/bin/env bash
+#!/usr/bin/env bash
 
 # Willow Archlinux installation script for personal use.
 # This set up uses a GPT partition table: p1 EFI_System 512Mb
 #                                         p2 Linux_root(x86-64)
 #   *root_part root partition
-#   *@root, @home, @var_log, @snapshots and @swap subvolumes(can opt out of snapshots)
+#   *@root, @home, @var_log, @snapshots and @swap subvolumes
 #   *Manual swap file size
 #   *LUKS system encryption
 #
@@ -177,9 +177,13 @@ format_partitions() {
 
     info_print "Creating Btrfs subvolumes..."
     mount "$BTRFS" /mnt
-    subvols=(snapshots swap var_log home root)
-    for subvol in '' "${subvols[@]}"; do
-        btrfs su cr /mnt/@"$subvol" &>/dev/null
+    subvols=( "" home var_log snapshots swap )
+    for subvol in "${subvols[@]}"; do
+        if [[ -z "$subvol" ]]; then
+            btrfs su cr /mnt/@
+        else
+            btrfs su cr /mnt/@$subvol
+        fi
     done
 
     umount /mnt
@@ -192,15 +196,19 @@ mount_partitions() {
     
     mount -o "$mountopts",subvol=@ "$BTRFS" /mnt
     mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
-    for subvol in "${subvols[@]:1}"; do
-        mount -o "$mountopts",subvol=@"$subvol" "$BTRFS" /mnt/"${subvol//_//}"
-    done
-    chmod 750 /mnt/root
+
+    mount -o "$mountopts",subvol=@home "$BTRFS" /mnt/home
+    mount -o "$mountopts",subvol=@var_log "$BTRFS" /mnt/var/log
     mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
+    mount -o "$mountopts",subvol=@swap "$BTRFS" /mnt/swap
+
+    chmod 750 /mnt/root
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot/
+
     info_print "Creating swap file..."
     if [[ "$swap_size" != "0" ]]; then
+        mkdir -p /mnt/swap
         chattr +C /mnt/swap
         btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/swap/swapfile
         swapon /mnt/swap/swapfile
@@ -244,6 +252,57 @@ microcode_detector() {
         info_print "An Intel CPU has been detected, the Intel microcode will be installed."
         microcode="intel-ucode"
     fi
+}
+
+aur_helper_selector() {
+    info_print "AUR helpers are used to install packages from the Arch User Repository (AUR)."
+    error_print "If skipped, Re-greetd and Hyprland will not be set up for autologin."
+    input_print "Choose an AUR helper to install (yay/paru, leave empty to skip): "
+    read -r aur_helper
+    case "$aur_helper" in
+        yay|paru)
+            aur_bool=1
+            info_print "AUR helper $aur_helper will be installed for user $username."
+            ;;
+        '')
+            aur_bool=0
+            info_print "No AUR helper will be installed."
+            return 1
+            ;;
+        *)
+            error_print "Invalid choice. Supported: yay, paru."
+            return 1
+            ;;
+    esac
+    return 0
+}
+
+install_aur_helper() {
+    [[ -z "$aur_helper" || -z "$username" ]] && return
+    arch-chroot /mnt /bin/bash -c "
+        sudo -u $username bash -c '
+            cd ~
+            git clone https://aur.archlinux.org/$aur_helper.git
+            cd $aur_helper
+            makepkg -si --noconfirm
+        '
+    "
+}
+
+setup_greetd_hyprland() {
+    arch-chroot /mnt /bin/bash -c "
+        $aur_helper -S --noconfirm greetd-regreet-git
+        mkdir -p /etc/greetd
+        cat > /etc/greetd/config.toml <<EOF
+[terminal]
+vt = 1
+
+[default_session]
+command = \"Hyprland\"
+user = \"$username\"
+EOF
+    "
+    info_print "Re-greetd & Hyprland have been set up for autologin."
 }
 
 read_pkglist() {
@@ -340,10 +399,10 @@ hostname_selector() {
 }
 
 set_usernpasswd() {
-    input_print "Please enter name for a user account (enter empty to not create one): "
+    input_print "Please enter name for a user account: "
     read -r username
     if [[ -z "$username" ]]; then
-        return 0
+        return 1
     fi
     input_print "Please enter a password for $username (you're not going to see the password): "
     read -r -s userpasswd
@@ -521,8 +580,14 @@ sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/e
 info_print "Enabling multilib repository in pacman.conf."
 sed -i '/^\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
 
+until aur_helper_selector; do : ; done
+if [[ $aur_bool -eq 1 ]]; then
+    install_aur_helper
+    setup_greetd_hyprland
+fi
+
 info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
-services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
+services=(greetd reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
