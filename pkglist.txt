@@ -38,6 +38,7 @@ snap-pac
 #┌──────────────────────────────  ──────────────────────────────┐
 #                         (Desktop & GUI)
 #└──────────────────────────────  ──────────────────────────────┘
+kitty
 firefox
 nautilus
 eog
@@ -75,11 +76,12 @@ hyprlock
 hyprpicker
 hyprshot
 hyprsunset
-swaync
 rofi-wayland
-waybar
 xdg-desktop-portal-hyprland
 xdg-user-dirs
+cliphist
+uwsm
+libnewt
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                        (Development Tools)
@@ -90,4 +92,4 @@ valgrind
 #                          (Miscellaneous)
 #└──────────────────────────────  ──────────────────────────────┘
 openrgb
-cliphist
+fastfetch
