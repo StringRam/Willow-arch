@@ -267,7 +267,6 @@ aur_helper_selector() {
         '')
             aur_bool=0
             info_print "No AUR helper will be installed."
-            return 1
             ;;
         *)
             error_print "Invalid choice. Supported: yay, paru."
@@ -291,15 +290,20 @@ install_aur_helper() {
 
 setup_greetd_hyprland() {
     arch-chroot /mnt /bin/bash -c "
-        $aur_helper -S --noconfirm greetd-regreet-git
+        sudo -u $username $aur_helper -S --noconfirm greetd-regreet-git
         mkdir -p /etc/greetd
+        cat > /etc/greetd/hyprland.conf <<EOF
+exec-once = regreet; hyprctl dispatch exit
+misc {
+    disable_hyprland_logo = true
+    disable_splash_rendering = true
+    disable_hyprland_qtutils_check = true
+}
+EOF
         cat > /etc/greetd/config.toml <<EOF
-[terminal]
-vt = 1
-
 [default_session]
-command = \"Hyprland\"
-user = \"$username\"
+command = "Hyprland --config /path/to/custom/hyprland/config"
+user = "$username"
 EOF
     "
     info_print "Re-greetd & Hyprland have been set up for autologin."
