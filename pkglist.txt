@@ -70,17 +70,9 @@ ufw
 #┌──────────────────────────────  ──────────────────────────────┐
 #                     (Window Manager & Shell)
 #└──────────────────────────────  ──────────────────────────────┘
-hyprland
-hypridle
-hyprlock
-hyprpicker
-hyprshot
-hyprsunset
-rofi-wayland
 xdg-desktop-portal-hyprland
 xdg-user-dirs
 cliphist
-uwsm
 libnewt
 
 #┌──────────────────────────────  ──────────────────────────────┐

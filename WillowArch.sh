@@ -256,7 +256,6 @@ microcode_detector() {
 
 aur_helper_selector() {
     info_print "AUR helpers are used to install packages from the Arch User Repository (AUR)."
-    error_print "If skipped, Re-greetd and Hyprland will not be set up for autologin."
     input_print "Choose an AUR helper to install (yay/paru, leave empty to skip): "
     read -r aur_helper
     case "$aur_helper" in
@@ -281,32 +280,12 @@ install_aur_helper() {
     arch-chroot /mnt /bin/bash -c "
         sudo -u $username bash -c '
             cd ~
+            rm -rf $aur_helper
             git clone https://aur.archlinux.org/$aur_helper.git
             cd $aur_helper
             makepkg -si --noconfirm
         '
     "
-}
-
-setup_greetd_hyprland() {
-    arch-chroot /mnt /bin/bash -c "
-        sudo -u $username $aur_helper -S --noconfirm greetd-regreet-git
-        mkdir -p /etc/greetd
-        cat > /etc/greetd/hyprland.conf <<EOF
-exec-once = regreet; hyprctl dispatch exit
-misc {
-    disable_hyprland_logo = true
-    disable_splash_rendering = true
-    disable_hyprland_qtutils_check = true
-}
-EOF
-        cat > /etc/greetd/config.toml <<EOF
-[default_session]
-command = "Hyprland --config /path/to/custom/hyprland/config"
-user = "$username"
-EOF
-    "
-    info_print "Re-greetd & Hyprland have been set up for autologin."
 }
 
 read_pkglist() {
@@ -587,11 +566,10 @@ sed -i '/^\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
 until aur_helper_selector; do : ; done
 if [[ $aur_bool -eq 1 ]]; then
     install_aur_helper
-    setup_greetd_hyprland
 fi
 
 info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
-services=(greetd reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
+services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
