@@ -4,7 +4,6 @@
 adobe-source-han-sans-cn-fonts
 adobe-source-han-sans-jp-fonts
 adobe-source-han-sans-kr-fonts
-ttf-jetbrains-mono-nerd
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                           (Base System)
@@ -34,28 +33,6 @@ rsync
 snapper
 snap-pac
 
-#┌──────────────────────────────  ──────────────────────────────┐
-#                         (Desktop & GUI)
-#└──────────────────────────────  ──────────────────────────────┘
-kitty
-firefox
-nautilus
-eog
-gnome-calculator
-gnome-disk-utility
-gnome-keyring
-gnome-system-monitor
-foliate
-obsidian
-
-#┌──────────────────────────────  ──────────────────────────────┐
-#                       (Audio & Multimedia)
-#└──────────────────────────────  ──────────────────────────────┘
-pavucontrol
-pipewire
-pipewire-pulse
-wireplumber
-imagemagick
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                           (Networking)
@@ -66,13 +43,6 @@ network-manager-applet
 networkmanager
 ufw
 
-#┌──────────────────────────────  ──────────────────────────────┐
-#                     (Window Manager & Shell)
-#└──────────────────────────────  ──────────────────────────────┘
-xdg-desktop-portal-hyprland
-xdg-user-dirs
-cliphist
-libnewt
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                        (Development Tools)
@@ -82,5 +52,5 @@ valgrind
 #┌──────────────────────────────  ──────────────────────────────┐
 #                          (Miscellaneous)
 #└──────────────────────────────  ──────────────────────────────┘
-openrgb
+xdg-user-dirs
 fastfetch
