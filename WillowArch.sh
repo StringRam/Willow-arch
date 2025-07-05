@@ -560,7 +560,7 @@ EOF
 info_print "Enabling colours, animations, and parallel downloads for pacman."
 sed -Ei 's/^#Color$/Color/' /mnt/etc/pacman.conf
 sed -i '/^Color$/a ILoveCandy' /mnt/etc/pacman.conf
-sed -Ei 's/^#ParallelDownloads.*/\1 = 10/' /mnt/etc/pacman.conf
+sed -Ei 's/^#ParallelDownloads.*/ParallelDownloads = 10/' /mnt/etc/pacman.conf
 
 info_print "Enabling multilib repository in pacman.conf."
 sed -i '/^\[multilib\]/,/^\[/{s/^#//}' /mnt/etc/pacman.conf
