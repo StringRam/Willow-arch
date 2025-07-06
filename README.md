@@ -10,13 +10,13 @@
 
 ## Features
 
-### ⚙️ Automated Setup
+### Automated Setup
 - Verifies UEFI boot  
 - Enables NTP and syncs system clock  
 - Detects CPU microcode (Intel/AMD)  
 - Supports kernel selection: `linux`, `lts`, `zen`, or `hardened`
 
-### 💾 Disk Layout & Encryption
+### Disk Layout & Encryption
 - Full disk encryption with LUKS  
 - GPT partitioning scheme  
 - Btrfs filesystem with subvolumes:
@@ -26,12 +26,12 @@
   - `@snapshots` for Snapper
   - `@swap` for swapfile
 
-### 📦 Modular Package Installation
+### Modular Package Installation
 - Installs base system  
 - Installs additional packages from `pkglist.txt`  
 - Fully configurable using plain text
 
-### 🧩 Post-Install Automation
+### Post-Install Automation
 - Configures locale, timezone, hostname, and user  
 - Installs and configures GRUB for encrypted boot  
 - Enables systemd services:
@@ -40,12 +40,12 @@
   - `btrfs scrub`
   - `grub-btrfs`
 
-### 🎨 UX & Output
+### UX & Output
 - Color-coded output  
 - Clear section titles and separators
 
 
-## 🧪 Work In Progress
+## Work In Progress
 - Gaming related configs 
 - Dotfile sync and integration  
 
@@ -61,7 +61,7 @@
 └── @swap           → /swap
 ```
 
-## 🚀 Usage
+## Usage
 
 ### 1. Clone the Repository
 ```bash
@@ -88,7 +88,7 @@ Please check the [arch wiki](https://wiki.archlinux.org) out for more info.
 > ⚠️ **Make sure you're running from a live Arch Linux environment with internet access.**
 
 
-## 🤝 Contributions
+## Contributions
 
 Contributions, suggestions, and constructive feedback are welcome.  
 Feel free to open an issue or pull request.
