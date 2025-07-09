@@ -127,6 +127,7 @@ n
 
 
 t
+
 23
 w
 EOF
@@ -162,6 +163,11 @@ format_partitions() {
     info_print "Formatting partitions..."
     mkfs.fat -F32 "$efi_part" &>/dev/null
 
+    info_print "Wiping $root_part..."
+    cryptsetup open --type plain --key-file /dev/urandom --sector-size 4096 "$root_part" wipecrypt
+    dd if=/dev/zero of=/dev/mapper/wipecrypt status=progress bs=1M
+    cryptsetup close wipecrypt
+    info_print "Wiping process complete."
     until set_luks_passwd; do : ; done
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
@@ -453,10 +459,6 @@ fi
 
 info_print "Please select a disk for partitioning:"
 select_disk
-info_print "Wiping $disk."
-wipefs -af "$disk" &>/dev/null
-sgdisk -Zo "$disk" &>/dev/null
-
 partition_disk
 format_partitions
 mount_partitions
