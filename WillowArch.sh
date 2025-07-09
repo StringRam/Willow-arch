@@ -426,6 +426,9 @@ set_rootpasswd() {
 #                       Installation process
 #└──────────────────────────────  ──────────────────────────────┘
 
+# Install the required fonts
+pacman -S --noconfirm ttf-jetbrains-mono-nerd
+
 # Clean the tty before starting
 clear
 
@@ -441,6 +444,7 @@ Yb, \`88     88     d8'       IP'\`Yb IP'\`Yb                                   
      Y8    ,88,    8P   88   I8P    I8P    i8'    ,8I   I8    I8    8I      dP\"  ,8P      Y8   ,8'    8I  i8'       I8P    I8 
       Yb,,d8\"\"8b,,dP  _,88,_,d8b,_ ,d8b,_ ,d8,   ,d8'  ,d8,  ,d8,  ,8I      Yb,_,dP       \`8b,,dP     Y8,,d8,_    _,d8     I8,
        \"88\"    \"88\"   8P\"\"Y88P'\"Y888P'\"Y88P\"Y8888P\"    P\"\"Y88P\"\"Y88P\"        \"Y8P\"         \`Y88P      \`Y8P\"\"Y8888PP88P     \`Y8
+
 ${RESET}"
 info_print "Welcome to the Willow-Arch! A somewhat flexible archlinux installation script"
 
