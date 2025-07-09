@@ -278,14 +278,15 @@ aur_helper_selector() {
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
     arch-chroot /mnt /bin/bash <<EOF
-sudo -u $username bash <<INNER
+sudo -u $username bash -c '
 cd ~
 rm -rf $aur_helper
 git clone https://aur.archlinux.org/$aur_helper.git
 cd $aur_helper
 makepkg -si --noconfirm
-INNER
+'
 EOF
+    info_print "AUR helper $aur_helper has been installed for user $username."
 }
 
 read_pkglist() {
