@@ -431,20 +431,17 @@ clear
 
 # ASCII Font: NScript
 echo -ne "${BOLD}${GREEN}
-
  ,ggg,      gg      ,gg                                                                ,ggg,                                  
-dP""Y8a     88     ,8P       ,dPYb, ,dPYb,                                            dP""8I                        ,dPYb,    
-Yb, `88     88     d8'       IP'`Yb IP'`Yb                                           dP   88                        IP'`Yb    
- `"  88     88     88   gg   I8  8I I8  8I                                          dP    88                        I8  8I    
-     88     88     88   ""   I8  8' I8  8'                                         ,8'    88                        I8  8'    
+dP\"\"Y8a     88     ,8P       ,dPYb, ,dPYb,                                            dP\"\"8I                        ,dPYb,    
+Yb, \`88     88     d8'       IP'\`Yb IP'\`Yb                                           dP   88                        IP'\`Yb    
+ \`\"  88     88     88   gg   I8  8I I8  8I                                          dP    88                        I8  8I    
+     88     88     88   \"\"   I8  8' I8  8'                                         ,8'    88                        I8  8'    
      88     88     88   gg   I8 dP  I8 dP    ,ggggg,    gg    gg    gg             d88888888    ,gggggg,    ,gggg,  I8 dPgg,  
-     88     88     88   88   I8dP   I8dP    dP"  "Y8ggg I8    I8    88bg     __   ,8"     88    dP""""8I   dP"  "Yb I8dP" "8I 
-     Y8    ,88,    8P   88   I8P    I8P    i8'    ,8I   I8    I8    8I      dP"  ,8P      Y8   ,8'    8I  i8'       I8P    I8 
-      Yb,,d8""8b,,dP  _,88,_,d8b,_ ,d8b,_ ,d8,   ,d8'  ,d8,  ,d8,  ,8I      Yb,_,dP       `8b,,dP     Y8,,d8,_    _,d8     I8,
-       "88"    "88"   8P""Y88P'"Y888P'"Y88P"Y8888P"    P""Y88P""Y88P"        "Y8P"         `Y88P      `Y8P""Y8888PP88P     `Y8
-                                                                                                                              
+     88     88     88   88   I8dP   I8dP    dP\"  \"Y8ggg I8    I8    88bg     __   ,8\"     88    dP\"\"\"\"8I   dP\"  \"Yb I8dP\" \"8I 
+     Y8    ,88,    8P   88   I8P    I8P    i8'    ,8I   I8    I8    8I      dP\"  ,8P      Y8   ,8'    8I  i8'       I8P    I8 
+      Yb,,d8\"\"8b,,dP  _,88,_,d8b,_ ,d8b,_ ,d8,   ,d8'  ,d8,  ,d8,  ,8I      Yb,_,dP       \`8b,,dP     Y8,,d8,_    _,d8     I8,
+       \"88\"    \"88\"   8P\"\"Y88P'\"Y888P'\"Y88P\"Y8888P\"    P\"\"Y88P\"\"Y88P\"        \"Y8P\"         \`Y88P      \`Y8P\"\"Y8888PP88P     \`Y8
 ${RESET}"
-
 info_print "Welcome to the Willow-Arch! A somewhat flexible archlinux installation script"
 
 check_uefi
@@ -554,10 +551,10 @@ Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 EOF
 
 info_print "Enabling colours, animations, and parallel downloads for pacman."
-sed -i -e 's/^#Color$/Color/' -e 's/^#ILoveCandy$/ILoveCandy/' -e 's/^ParallelDownloads.*/ParallelDownloads = 10/' /mnt/etc/pacman.conf
+sed -i -e "s/^#Color$/Color/" -e "s/^#ILoveCandy$/ILoveCandy/" -e "s/^ParallelDownloads.*/ParallelDownloads = 10/" /mnt/etc/pacman.conf
 
 info_print "Enabling multilib repository in pacman.conf."
-sed -i '/^#\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
+sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
 
 until aur_helper_selector; do : ; done
 install_aur_helper
