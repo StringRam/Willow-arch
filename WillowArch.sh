@@ -479,6 +479,7 @@ until keyboard_selector; do : ; done
 until hostname_selector; do : ; done
 until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
+until aur_helper_selector; do : ; done
 
 echo "$hostname" > /mnt/etc/hostname
 
@@ -563,7 +564,6 @@ sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/e
 info_print "Enabling multilib repository in pacman.conf."
 sed -i '/^\[multilib\]/,/^\[/{s/^#//}' /mnt/etc/pacman.conf
 
-until aur_helper_selector; do : ; done
 if [[ $aur_bool -eq 1 ]]; then
     install_aur_helper
 fi
