@@ -88,7 +88,7 @@ select_disk() {
 
     PS3="Select the disk you want to install Arch on (e.g. 1): "
     select disk in $(lsblk -dpno NAME | grep -v "boot"); do
-        if [[ -b $disk ]]; then
+        if [[ -b "$disk" ]]; then
             info_print "Selected disk: $disk"
             break
         else
@@ -139,7 +139,7 @@ EOF
 set_luks_passwd() {
     input_print "Enter your LUKS container password (for security purposes you won't see it): "
     read -r -s encryption_passwd
-    if [[ -z $encryption_passwd ]]; then
+    if [[ -z "$encryption_passwd" ]]; then
         echo
         error_print "You must enter a password for the LUKS container. Try again"
         return 1
@@ -147,7 +147,7 @@ set_luks_passwd() {
 
     input_print "Enter your LUKS container password again (for security purposes you won't see it): "
     read -r -s encryption_passwd2
-    if [[ $encryption_passwd != $encryption_passwd2 ]]; then
+    if [[ "$encryption_passwd" != "$encryption_passwd2" ]]; then
         error_print "Passwords don't match, try again"
         return 1
     fi
@@ -222,7 +222,7 @@ kernel_selector() {
     info_print "4) Zen Kernel: A Linux kernel optimized for desktop usage"
     input_print "Please select the number of the corresponding kernel (e.g. 1): " 
     read -r kernel_choice
-    case $kernel_choice in
+    case "$kernel_choice" in
         1 ) kernel="linux"
             return 0;;
         2 ) kernel="linux-hardened"
