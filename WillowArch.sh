@@ -25,15 +25,15 @@ CYAN='\033[36m'
 RESET='\033[0m'
 
 info_print () {
-    echo -e "${BOLD}${GREEN}[ ${YELLOW}${GREEN} ] $1${RESET}"
+    echo -e "${BOLD}${GREEN}[ * ] $1${RESET}"
 }
 
 input_print () {
-    echo -ne "${BOLD}${YELLOW}[ ${GREEN}${YELLOW} ] $1${RESET}"
+    echo -ne "${BOLD}${YELLOW}[ * ] $1${RESET}"
 }
 
 error_print () {
-    echo -e "${BOLD}${RED}[ ${BLUE}${RED} ] $1${RESET}"
+    echo -e "${BOLD}${RED}[ * ] $1${RESET}"
 }
 
 
@@ -162,14 +162,7 @@ format_partitions() {
     info_print "Formatting partitions..."
     mkfs.fat -F32 "$efi_part" &>/dev/null
 
-    info_print "Wiping $root_part..."
-    cryptsetup open --type plain --key-file /dev/urandom --sector-size 4096 "$root_part" wipecrypt
-    dd if=/dev/zero of=/dev/mapper/wipecrypt status=progress bs=1M
-    cryptsetup close wipecrypt
-    info_print "Wiping process complete."
-
     until set_luks_passwd; do : ; done
-
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
     BTRFS=/dev/mapper/root
@@ -459,8 +452,11 @@ if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
 fi
 
 info_print "Please select a disk for partitioning:"
-
 select_disk
+info_print "Wiping $DISK."
+wipefs -af "$DISK" &>/dev/null
+sgdisk -Zo "$DISK" &>/dev/null
+
 partition_disk
 format_partitions
 mount_partitions
