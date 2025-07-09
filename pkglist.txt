@@ -9,6 +9,7 @@ adobe-source-han-sans-kr-fonts
 #                           (Base System)
 #└──────────────────────────────  ──────────────────────────────┘
 base
+base-devel
 linux-firmware
 man-db
 man-pages
@@ -17,6 +18,7 @@ texinfo
 #┌──────────────────────────────  ──────────────────────────────┐
 #                            (Utilities)
 #└──────────────────────────────  ──────────────────────────────┘
+git
 brightnessctl
 dosfstools
 grub

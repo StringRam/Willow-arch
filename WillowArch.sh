@@ -275,7 +275,6 @@ aur_helper_selector() {
 
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
-    pacman --noconfirm --needed -S base-devel git
     arch-chroot /mnt /bin/bash <<EOF
 sudo -u "$username" bash -c '
 cd ~
