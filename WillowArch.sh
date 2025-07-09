@@ -277,9 +277,12 @@ install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
     pacman --noconfirm --needed -S base-devel git
     arch-chroot /mnt /bin/bash <<EOF
-sudo -u "$username" bash git clone https://aur.archlinux.org/$aur_helper.git
+sudo -u "$username" bash -c '
+cd ~
+git clone https://aur.archlinux.org/$aur_helper.git'
 cd "$aur_helper"
-sudo -u "$username" bash makepkg -si --noconfirm
+makepkg -si --noconfirm
+'
 EOF
     info_print "AUR helper $aur_helper has been installed for user $username."
 }
