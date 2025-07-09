@@ -426,8 +426,8 @@ set_rootpasswd() {
 #                       Installation process
 #└──────────────────────────────  ──────────────────────────────┘
 
-# Install the required fonts
-pacman -S --noconfirm ttf-jetbrains-mono-nerd
+info_print "Updating package database..."
+pacman -Sy --noconfirm || { error_print "Failed to update package database. Exiting."; exit; }
 
 # Clean the tty before starting
 clear
