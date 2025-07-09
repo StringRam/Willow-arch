@@ -9,7 +9,6 @@ adobe-source-han-sans-kr-fonts
 #                           (Base System)
 #└──────────────────────────────  ──────────────────────────────┘
 base
-base-devel
 linux-firmware
 man-db
 man-pages
@@ -22,7 +21,6 @@ brightnessctl
 dosfstools
 grub
 efibootmgr
-git
 nano
 reflector
 sudo

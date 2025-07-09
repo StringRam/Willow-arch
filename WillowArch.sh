@@ -260,11 +260,9 @@ aur_helper_selector() {
     read -r aur_helper
     case "$aur_helper" in
         yay|paru)
-            aur_bool=1
             info_print "AUR helper $aur_helper will be installed for user $username."
             ;;
         '')
-            aur_bool=0
             info_print "No AUR helper will be installed."
             ;;
         *)
@@ -277,10 +275,11 @@ aur_helper_selector() {
 
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
+    pacman --noconfirm --needed -S base-devel git
     arch-chroot /mnt /bin/bash <<EOF
-sudo -u $username bash -c git clone https://aur.archlinux.org/$aur_helper.git
-cd $aur_helper
-sudo -u $username bash makepkg -si --noconfirm
+sudo -u "$username" bash git clone https://aur.archlinux.org/$aur_helper.git
+cd "$aur_helper"
+sudo -u "$username" bash makepkg -si --noconfirm
 EOF
     info_print "AUR helper $aur_helper has been installed for user $username."
 }
@@ -476,7 +475,6 @@ until keyboard_selector; do : ; done
 until hostname_selector; do : ; done
 until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
-until aur_helper_selector; do : ; done
 
 echo "$hostname" > /mnt/etc/hostname
 
@@ -561,9 +559,8 @@ sed -i -e 's/^#Color$/Color/' -e 's/^#ILoveCandy$/ILoveCandy/' -e 's/^ParallelDo
 info_print "Enabling multilib repository in pacman.conf."
 sed -i '/^#\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
 
-if [[ $aur_bool -eq 1 ]]; then
-    install_aur_helper
-fi
+until aur_helper_selector; do : ; done
+install_aur_helper
 
 info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
