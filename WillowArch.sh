@@ -561,8 +561,8 @@ sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
 until aur_helper_selector; do : ; done
 install_aur_helper
 
-info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
-services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
+info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
+services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
