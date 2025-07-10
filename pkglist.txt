@@ -26,8 +26,7 @@ efibootmgr
 nano
 reflector
 sudo
-zsh
-btrfs-progs 
+btrfs-progs
 grub-btrfs
 rsync
 snapper
@@ -41,7 +40,6 @@ blueman
 bluez
 network-manager-applet
 networkmanager
-ufw
 
 
 #┌──────────────────────────────  ──────────────────────────────┐
@@ -49,8 +47,8 @@ ufw
 #└──────────────────────────────  ──────────────────────────────┘
 valgrind
 
+
 #┌──────────────────────────────  ──────────────────────────────┐
 #                          (Miscellaneous)
 #└──────────────────────────────  ──────────────────────────────┘
 xdg-user-dirs
-fastfetch
