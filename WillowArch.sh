@@ -145,9 +145,10 @@ set_luks_passwd() {
         error_print "You must enter a password for the LUKS container. Try again"
         return 1
     fi
-
+    echo
     input_print "Enter your LUKS container password again (for security purposes you won't see it): "
     read -r -s encryption_passwd2
+    echo
     if [[ "$encryption_passwd" != "$encryption_passwd2" ]]; then
         error_print "Passwords don't match, try again"
         return 1
@@ -365,6 +366,7 @@ hostname_selector() {
     input_print "Please enter the hostname: "
     read -r hostname
     if [[ -z "$hostname" ]]; then
+        echo
         error_print "You need to enter a hostname in order to continue."
         return 1
     fi
@@ -389,7 +391,6 @@ set_usernpasswd() {
     read -r -s userpasswd2
     echo
     if [[ "$userpasswd" != "$userpasswd2" ]]; then
-        echo
         error_print "Passwords don't match, please try again."
         return 1
     fi
