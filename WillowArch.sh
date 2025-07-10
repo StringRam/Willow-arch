@@ -25,15 +25,15 @@ CYAN='\033[36m'
 RESET='\033[0m'
 
 info_print () {
-    echo -e "${BOLD}${GREEN}[ * ] $1${RESET}"
+    echo -e "${BOLD}${GREEN}[ o ] $1${RESET}"
 }
 
 input_print () {
-    echo -ne "${BOLD}${YELLOW}[ * ] $1${RESET}"
+    echo -ne "${BOLD}${YELLOW}[ o ] $1${RESET}"
 }
 
 error_print () {
-    echo -e "${BOLD}${RED}[ * ] $1${RESET}"
+    echo -e "${BOLD}${RED}[ o ] $1${RESET}"
 }
 
 
