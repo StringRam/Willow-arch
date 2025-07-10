@@ -383,7 +383,7 @@ keyboard_selector() {
 #               Hostname/Users/Bootloader installation
 #└──────────────────────────────  ──────────────────────────────┘
 hostname_selector() {
-    input_print "Please enter the hostname: "
+    input_print "Please enter the hostname (it must contain from 1 to 63 characters, using only lowercase a to z, 0 to 9): "
     read -r hostname
     if [[ -z "$hostname" ]]; then
         echo
@@ -440,9 +440,6 @@ set_rootpasswd() {
 #┌──────────────────────────────  ──────────────────────────────┐
 #                       Installation process
 #└──────────────────────────────  ──────────────────────────────┘
-
-info_print "Updating package database..."
-pacman -Sy --noconfirm || { error_print "Failed to update package database. Exiting."; exit; }
 
 # Clean the tty before starting
 clear
@@ -502,6 +499,13 @@ fstab_file
 sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
 echo "LANG=$locale" > /mnt/etc/locale.conf
 echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
+
+info_print "Setting hosts file."
+cat > /mnt/etc/hosts <<EOF
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   $hostname.localdomain   $hostname
+EOF
 
 # Virtualization check.
 virt_check
