@@ -199,7 +199,7 @@ mount_partitions() {
 
     chmod 750 /mnt/root
     chattr +C /mnt/var/log
-    mount "$efi_part" /mnt/boot/
+    mount "$efi_part" /mnt/boot
 
     info_print "Creating swap file..."
     if [[ "$swap_size" != "0" ]]; then
@@ -294,7 +294,7 @@ read_pkglist() {
 
 package_install() {
     read_pkglist
-    packages+=("$kernel" "$kernel-headers" "$microcode")
+    packages+=("$kernel" "$kernel"-headers "$microcode")
 
     info_print "Installing packages: ${packages[*]}"
     pacstrap -K /mnt "${packages[@]}"
@@ -568,4 +568,5 @@ for service in "${services[@]}"; do
 done
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
+info_print "Remember to unmount all partitions before rebooting."
 exit
