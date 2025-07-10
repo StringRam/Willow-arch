@@ -198,14 +198,11 @@ format_partitions() {
 
     info_print "Creating Btrfs subvolumes..."
     mount "$BTRFS" /mnt
-    subvols=( "" home var_log snapshots swap )
-    for subvol in "${subvols[@]}"; do
-        if [[ -z "$subvol" ]]; then
-            btrfs su cr /mnt/@
-        else
-            btrfs su cr /mnt/@$subvol
-        fi
+    subvols=(snapshots var_log home root swap)
+    for subvol in '' "${subvols[@]}"; do
+        btrfs su cr /mnt/@"$subvol" &>/dev/null
     done
+
 
     umount /mnt
     info_print "Subvolumes created successfully"
@@ -214,16 +211,13 @@ format_partitions() {
 mount_partitions() {
     info_print "Mounting subvolumes..."
     mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
-    
     mount -o "$mountopts",subvol=@ "$BTRFS" /mnt
     mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
-
-    mount -o "$mountopts",subvol=@home "$BTRFS" /mnt/home
-    mount -o "$mountopts",subvol=@var_log "$BTRFS" /mnt/var/log
-    mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
-    mount -o "$mountopts",subvol=@swap "$BTRFS" /mnt/swap
-
+    for subvol in "${subvols[@]:1}"; do
+        mount -o "$mountopts",subvol=@"$subvol" "$BTRFS" /mnt/"${subvol//_//}"
+    done
     chmod 750 /mnt/root
+    mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot
 
@@ -514,7 +508,7 @@ virt_check
 
 info_print "Configuring /etc/mkinitcpio.conf."
 cat > /mnt/etc/mkinitcpio.conf <<EOF
-HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt lvm2 filesystems fsck grub-btrfs-overlayfs)
+HOOKS=(base systemd btrfs autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck grub-btrfs-overlayfs)
 EOF
 
 info_print "Setting up grub config."

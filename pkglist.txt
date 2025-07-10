@@ -27,10 +27,10 @@ nano
 reflector
 sudo
 btrfs-progs
-grub-btrfs
 rsync
 snapper
 snap-pac
+grub-btrfs
 
 
 #┌──────────────────────────────  ──────────────────────────────┐
