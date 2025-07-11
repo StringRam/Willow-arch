@@ -121,8 +121,6 @@ select_disk() {
             error_print "Invalid selection."
         fi
     done
-    info_print "Informing kernel about disk changes..."
-    partprobe "$disk" || udevadm settle
 }
 
 partition_disk() {
@@ -500,7 +498,6 @@ sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
 echo "LANG=$locale" > /mnt/etc/locale.conf
 echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
 
-# Virtualization check.
 virt_check
 
 info_print "Configuring /etc/mkinitcpio.conf."
@@ -509,7 +506,7 @@ HOOKS=(base systemd btrfs autodetect microcode modconf kms keyboard sd-vconsole 
 EOF
 
 info_print "Setting up grub config."
-UUID=$(blkid -s UUID -o value $root_part)
+UUID=$(blkid -s UUID -o value "$root_part")
 sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
 
 info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
@@ -537,10 +534,10 @@ arch-chroot /mnt /bin/bash -e <<EOF
     chmod 750 /.snapshots
 
     # Installing GRUB.
-    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB &>/dev/null
 
     # Creating grub config file.
-    grub-mkconfig -o /boot/grub/grub.cfg
+    grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
 
 EOF
 
@@ -556,7 +553,7 @@ if [[ -n "$username" ]]; then
 fi
 
 info_print "Configuring /boot backup when pacman transactions are made."
-mkdir -p /mnt/etc/pacman.d/hooks
+mkdir /mnt/etc/pacman.d/hooks
 cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
 [Trigger]
 Operation = Upgrade
@@ -573,7 +570,7 @@ Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 EOF
 
 info_print "Enabling colours, animations, and parallel downloads for pacman."
-sed -i -e "s/^#Color$/Color/" -e "s/^#ILoveCandy$/ILoveCandy/" -e "s/^ParallelDownloads.*/ParallelDownloads = 10/" /mnt/etc/pacman.conf
+sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
 
 info_print "Enabling multilib repository in pacman.conf."
 sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf

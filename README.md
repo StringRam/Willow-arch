@@ -74,7 +74,7 @@ chmod +x WillowArch.sh
 ```
 ### 3.Run the script
 ```bash
-./WillowArch.sh
+bash WillowArch.sh
 ```
 You'll be guided through:
 
