@@ -179,25 +179,21 @@ set_luks_passwd() {
 }
 
 format_partitions() {
-    input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
-    read -r swap_size
-
     info_print "Formatting partitions..."
-    mkfs.fat -F32 "$efi_part" &>/dev/null
+    mkfs.fat -F 32 "$efi_part" &>/dev/null
 
     until set_luks_passwd; do : ; done
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
     BTRFS="/dev/mapper/root"
     mkfs.btrfs "$BTRFS" &>/dev/null
+    mount "$BTRFS" /mnt
 
     info_print "Creating Btrfs subvolumes..."
-    mount "$BTRFS" /mnt
     subvols=(snapshots var_log home root swap)
     for subvol in '' "${subvols[@]}"; do
         btrfs su cr /mnt/@"$subvol" &>/dev/null
     done
-
 
     umount /mnt
     info_print "Subvolumes created successfully"
@@ -216,6 +212,8 @@ mount_partitions() {
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot
 
+    input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
+    read -r swap_size
     info_print "Creating swap file..."
     if [[ "$swap_size" != "0" ]]; then
         mkdir -p /mnt/swap
