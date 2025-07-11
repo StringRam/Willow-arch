@@ -80,23 +80,23 @@ virt_check () {
     hypervisor=$(systemd-detect-virt)
     case $hypervisor in
         kvm )   info_print "KVM has been detected, setting up guest tools."
-                pacstrap /mnt qemu-guest-agent &>/dev/null
-                systemctl enable qemu-guest-agent --root=/mnt &>/dev/null
+                pacstrap /mnt qemu-guest-agent
+                systemctl enable qemu-guest-agent --root=/mnt
                 ;;
         vmware  )   info_print "VMWare Workstation/ESXi has been detected, setting up guest tools."
                     pacstrap /mnt open-vm-tools >/dev/null
-                    systemctl enable vmtoolsd --root=/mnt &>/dev/null
-                    systemctl enable vmware-vmblock-fuse --root=/mnt &>/dev/null
+                    systemctl enable vmtoolsd --root=/mnt
+                    systemctl enable vmware-vmblock-fuse --root=/mnt
                     ;;
         oracle )    info_print "VirtualBox has been detected, setting up guest tools."
-                    pacstrap /mnt virtualbox-guest-utils &>/dev/null
-                    systemctl enable vboxservice --root=/mnt &>/dev/null
+                    pacstrap /mnt virtualbox-guest-utils
+                    systemctl enable vboxservice --root=/mnt
                     ;;
         microsoft ) info_print "Hyper-V has been detected, setting up guest tools."
-                    pacstrap /mnt hyperv &>/dev/null
-                    systemctl enable hv_fcopy_daemon --root=/mnt &>/dev/null
-                    systemctl enable hv_kvp_daemon --root=/mnt &>/dev/null
-                    systemctl enable hv_vss_daemon --root=/mnt &>/dev/null
+                    pacstrap /mnt hyperv
+                    systemctl enable hv_fcopy_daemon --root=/mnt
+                    systemctl enable hv_kvp_daemon --root=/mnt
+                    systemctl enable hv_vss_daemon --root=/mnt
                     ;;
     esac
 }
@@ -179,18 +179,18 @@ set_luks_passwd() {
 
 format_partitions() {
     info_print "Formatting partitions..."
-    mkfs.fat -F 32 "$efi_part" &>/dev/null
+    mkfs.fat -F 32 "$efi_part"
 
-    echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
+    echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d -
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
     BTRFS="/dev/mapper/root"
-    mkfs.btrfs "$BTRFS" &>/dev/null
+    mkfs.btrfs "$BTRFS"
     mount "$BTRFS" /mnt
 
     info_print "Creating Btrfs subvolumes..."
     subvols=(snapshots var_log home root swap)
     for subvol in '' "${subvols[@]}"; do
-        btrfs su cr /mnt/@"$subvol" &>/dev/null
+        btrfs su cr /mnt/@"$subvol"
     done
 
     umount /mnt
@@ -473,8 +473,8 @@ until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
 
 info_print "Wiping $disk."
-wipefs -af "$disk" &>/dev/null
-sgdisk -Zo "$disk" &>/dev/null
+wipefs -af "$disk"
+sgdisk -Zo "$disk"
 
 partition_disk
 format_partitions
@@ -508,31 +508,31 @@ info_print "Configuring the system (timezone, system clock, initramfs, Snapper, 
 arch-chroot /mnt /bin/bash -e <<EOF
 
     # Setting up timezone.
-    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime &>/dev/null
+    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
 
     # Setting up clock.
     hwclock --systohc
 
     # Generating locales.
-    locale-gen &>/dev/null
+    locale-gen
 
     # Generating a new initramfs.
-    mkinitcpio -P &>/dev/null
+    mkinitcpio -P
 
     # Snapper configuration.
     umount /.snapshots
     rm -r /.snapshots
     snapper --no-dbus -c root create-config /
-    btrfs subvolume delete /.snapshots &>/dev/null
+    btrfs subvolume delete /.snapshots
     mkdir /.snapshots
-    mount -a &>/dev/null
+    mount -a
     chmod 750 /.snapshots
 
     # Installing GRUB.
-    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB &>/dev/null
+    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
 
     # Creating grub config file.
-    grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
+    grub-mkconfig -o /boot/grub/grub.cfg
 
 EOF
 
@@ -576,7 +576,7 @@ install_aur_helper
 info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service)
 for service in "${services[@]}"; do
-    systemctl enable "$service" --root=/mnt &>/dev/null
+    systemctl enable "$service" --root=/mnt
 done
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
