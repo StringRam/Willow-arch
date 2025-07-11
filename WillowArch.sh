@@ -107,19 +107,16 @@ virt_check () {
 #└──────────────────────────────  ──────────────────────────────┘
 select_disk() {
     info_print "Available disks:"
-    lsblk -dpno NAME,SIZE,MODEL | grep -v "boot"
-
-    PS3="Select the disk you want to install Arch on (e.g. 1): "
-    select disk in $(lsblk -dpno NAME | grep -v "boot"); do
-        if [[ -b "$disk" ]]; then
-            info_print "Selected disk: $disk"
-            break
-        else
-            error_print "Invalid selection."
-        fi
+    PS3="Please select the number of the corresponding disk (e.g. 1): "
+    select entry in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd|mmcblk");
+    do
+        disk="$entry"
+        info_print "Arch Linux will be installed on the following disk: $disk"
+        break
     done
 }
 
+# Note: experiment with both fdisk and parted tomorrow to find out if it is necessary to change this implementation
 partition_disk() {
     input_print "Do you wish to make a custom partition layout? [y/N]: "
     read -r custom
@@ -156,6 +153,8 @@ EOF
         root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
         info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
     fi
+    info_print "Informing the Kernel about the disk changes."
+    partprobe "$disk"
 }
 
 set_luks_passwd() {
@@ -182,7 +181,6 @@ format_partitions() {
     info_print "Formatting partitions..."
     mkfs.fat -F 32 "$efi_part" &>/dev/null
 
-    until set_luks_passwd; do : ; done
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
     BTRFS="/dev/mapper/root"
@@ -456,15 +454,24 @@ info_print "Welcome to the Willow-Arch! A somewhat flexible archlinux installati
 check_uefi
 check_clock_sync
 
+until keyboard_selector; do : ; done
+
+info_print "Please select a disk for partitioning:"
 input_print "Warning: this will wipe the selected disk. Continue [y/N]?: "
 read -r disk_response
 if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
     error_print "Quitting..."
     exit
 fi
-
-info_print "Please select a disk for partitioning:"
 select_disk
+
+until set_luks_passwd; do : ; done
+until kernel_selector; do : ; done
+until locale_selector; do : ; done
+until hostname_selector; do : ; done
+until set_usernpasswd; do : ; done
+until set_rootpasswd; do : ; done
+
 info_print "Wiping $disk."
 wipefs -af "$disk" &>/dev/null
 sgdisk -Zo "$disk" &>/dev/null
@@ -475,15 +482,8 @@ mount_partitions
 
 info_print "Device: $disk properly partitioned, formated and mounted."
 
-until kernel_selector; do : ; done
 microcode_detector
 package_install
-
-until locale_selector; do : ; done
-until keyboard_selector; do : ; done
-until hostname_selector; do : ; done
-until set_usernpasswd; do : ; done
-until set_rootpasswd; do : ; done
 
 echo "$hostname" > /mnt/etc/hostname
 
