@@ -502,7 +502,7 @@ virt_check
 
 info_print "Configuring /etc/mkinitcpio.conf."
 cat > /mnt/etc/mkinitcpio.conf <<EOF
-HOOKS=(base systemd btrfs autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck grub-btrfs-overlayfs)
+HOOKS=(systemd autodetect microcode keyboard sd-vconsole modconf kms block sd-encrypt filesystems fsck grub-btrfs-overlayfs)
 EOF
 
 info_print "Setting up grub config."
