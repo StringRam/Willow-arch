@@ -64,17 +64,17 @@
 ## Usage
 
 ### 1. Clone the Repository
-```bash
+```
 git clone https://github.com/StringRam/Willow-arch.git
 cd Willow-arch
 ```
 ### 2.Make the script executable
-```bash
+```
 chmod +x WillowArch.sh
 ```
 ### 3.Run the script
-```bash
-bash WillowArch.sh
+```
+./WillowArch.sh
 ```
 You'll be guided through:
 
