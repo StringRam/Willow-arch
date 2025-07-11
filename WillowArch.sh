@@ -18,9 +18,6 @@ BOLD='\033[1m'
 RED='\033[31m'
 GREEN='\033[32m'
 YELLOW='\033[33m'
-BLUE='\033[34m'
-MAGENTA='\033[35m'
-CYAN='\033[36m'
 # Reset color
 RESET='\033[0m'
 
@@ -191,7 +188,7 @@ format_partitions() {
     until set_luks_passwd; do : ; done
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
-    BTRFS=/dev/mapper/root
+    BTRFS="/dev/mapper/root"
     mkfs.btrfs "$BTRFS" &>/dev/null
 
     info_print "Creating Btrfs subvolumes..."
