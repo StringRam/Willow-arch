@@ -4,8 +4,6 @@
 adobe-source-han-sans-cn-fonts
 adobe-source-han-sans-jp-fonts
 adobe-source-han-sans-kr-fonts
-ttf-jetbrains-mono-nerd
-otf-font-awesome
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                           (Base System)
@@ -20,42 +18,20 @@ texinfo
 #┌──────────────────────────────  ──────────────────────────────┐
 #                            (Utilities)
 #└──────────────────────────────  ──────────────────────────────┘
+git
 brightnessctl
 dosfstools
 grub
 efibootmgr
-git
 nano
 reflector
 sudo
-zsh
-btrfs-progs 
-grub-btrfs
+btrfs-progs
 rsync
 snapper
 snap-pac
+grub-btrfs
 
-#┌──────────────────────────────  ──────────────────────────────┐
-#                         (Desktop & GUI)
-#└──────────────────────────────  ──────────────────────────────┘
-firefox
-nautilus
-eog
-gnome-calculator
-gnome-disk-utility
-gnome-keyring
-gnome-system-monitor
-foliate
-obsidian
-
-#┌──────────────────────────────  ──────────────────────────────┐
-#                       (Audio & Multimedia)
-#└──────────────────────────────  ──────────────────────────────┘
-pavucontrol
-pipewire
-pipewire-pulse
-wireplumber
-imagemagick
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                           (Networking)
@@ -64,30 +40,15 @@ blueman
 bluez
 network-manager-applet
 networkmanager
-ufw
 
-#┌──────────────────────────────  ──────────────────────────────┐
-#                     (Window Manager & Shell)
-#└──────────────────────────────  ──────────────────────────────┘
-hyprland
-hypridle
-hyprlock
-hyprpicker
-hyprshot
-hyprsunset
-swaync
-rofi-wayland
-waybar
-xdg-desktop-portal-hyprland
-xdg-user-dirs
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                        (Development Tools)
 #└──────────────────────────────  ──────────────────────────────┘
 valgrind
 
+
 #┌──────────────────────────────  ──────────────────────────────┐
 #                          (Miscellaneous)
 #└──────────────────────────────  ──────────────────────────────┘
-openrgb
-cliphist
+xdg-user-dirs

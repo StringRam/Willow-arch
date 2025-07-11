@@ -25,20 +25,20 @@ CYAN='\033[36m'
 RESET='\033[0m'
 
 info_print () {
-    echo -e "${BOLD}${GREEN}[ ${YELLOW}${GREEN} ] $1${RESET}"
+    echo -e "${BOLD}${GREEN}[ o ] $1${RESET}"
 }
 
 input_print () {
-    echo -ne "${BOLD}${YELLOW}[ ${GREEN}${YELLOW} ] $1${RESET}"
+    echo -ne "${BOLD}${YELLOW}[ o ] $1${RESET}"
 }
 
 error_print () {
-    echo -e "${BOLD}${RED}[ ${BLUE}${RED} ] $1${RESET}"
+    echo -e "${BOLD}${RED}[ o ] $1${RESET}"
 }
 
 
 #┌──────────────────────────────  ──────────────────────────────┐
-#                          Initial checks
+#                              Checks
 #└──────────────────────────────  ──────────────────────────────┘
 check_uefi() {
     if [[ -f /sys/firmware/efi/fw_platform_size ]]; then
@@ -78,6 +78,32 @@ check_clock_sync() {
     fi
 }
 
+# Virtualization check (function).
+virt_check () {
+    hypervisor=$(systemd-detect-virt)
+    case $hypervisor in
+        kvm )   info_print "KVM has been detected, setting up guest tools."
+                pacstrap /mnt qemu-guest-agent &>/dev/null
+                systemctl enable qemu-guest-agent --root=/mnt &>/dev/null
+                ;;
+        vmware  )   info_print "VMWare Workstation/ESXi has been detected, setting up guest tools."
+                    pacstrap /mnt open-vm-tools >/dev/null
+                    systemctl enable vmtoolsd --root=/mnt &>/dev/null
+                    systemctl enable vmware-vmblock-fuse --root=/mnt &>/dev/null
+                    ;;
+        oracle )    info_print "VirtualBox has been detected, setting up guest tools."
+                    pacstrap /mnt virtualbox-guest-utils &>/dev/null
+                    systemctl enable vboxservice --root=/mnt &>/dev/null
+                    ;;
+        microsoft ) info_print "Hyper-V has been detected, setting up guest tools."
+                    pacstrap /mnt hyperv &>/dev/null
+                    systemctl enable hv_fcopy_daemon --root=/mnt &>/dev/null
+                    systemctl enable hv_kvp_daemon --root=/mnt &>/dev/null
+                    systemctl enable hv_vss_daemon --root=/mnt &>/dev/null
+                    ;;
+    esac
+}
+
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                Disk partitioning, formatting, etc.
@@ -88,15 +114,13 @@ select_disk() {
 
     PS3="Select the disk you want to install Arch on (e.g. 1): "
     select disk in $(lsblk -dpno NAME | grep -v "boot"); do
-        if [[ -b $disk ]]; then
+        if [[ -b "$disk" ]]; then
             info_print "Selected disk: $disk"
             break
         else
             error_print "Invalid selection."
         fi
     done
-    info_print "Informing kernel about disk changes..."
-    partprobe "$disk" || udevadm settle
 }
 
 partition_disk() {
@@ -127,6 +151,7 @@ n
 
 
 t
+
 23
 w
 EOF
@@ -139,15 +164,16 @@ EOF
 set_luks_passwd() {
     input_print "Enter your LUKS container password (for security purposes you won't see it): "
     read -r -s encryption_passwd
-    if [[ -z $encryption_passwd ]]; then
+    if [[ -z "$encryption_passwd" ]]; then
         echo
         error_print "You must enter a password for the LUKS container. Try again"
         return 1
     fi
-
+    echo
     input_print "Enter your LUKS container password again (for security purposes you won't see it): "
     read -r -s encryption_passwd2
-    if [[ $encryption_passwd != $encryption_passwd2 ]]; then
+    echo
+    if [[ "$encryption_passwd" != "$encryption_passwd2" ]]; then
         error_print "Passwords don't match, try again"
         return 1
     fi
@@ -162,14 +188,7 @@ format_partitions() {
     info_print "Formatting partitions..."
     mkfs.fat -F32 "$efi_part" &>/dev/null
 
-    info_print "Wiping $root_part..."
-    cryptsetup open --type plain --key-file /dev/urandom --sector-size 4096 "$root_part" wipecrypt
-    dd if=/dev/zero of=/dev/mapper/wipecrypt status=progress bs=1M
-    cryptsetup close wipecrypt
-    info_print "Wiping process complete."
-
     until set_luks_passwd; do : ; done
-
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
     echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
     BTRFS=/dev/mapper/root
@@ -177,14 +196,11 @@ format_partitions() {
 
     info_print "Creating Btrfs subvolumes..."
     mount "$BTRFS" /mnt
-    subvols=( "" home var_log snapshots swap )
-    for subvol in "${subvols[@]}"; do
-        if [[ -z "$subvol" ]]; then
-            btrfs su cr /mnt/@
-        else
-            btrfs su cr /mnt/@$subvol
-        fi
+    subvols=(snapshots var_log home root swap)
+    for subvol in '' "${subvols[@]}"; do
+        btrfs su cr /mnt/@"$subvol" &>/dev/null
     done
+
 
     umount /mnt
     info_print "Subvolumes created successfully"
@@ -193,18 +209,15 @@ format_partitions() {
 mount_partitions() {
     info_print "Mounting subvolumes..."
     mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
-    
     mount -o "$mountopts",subvol=@ "$BTRFS" /mnt
     mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
-
-    mount -o "$mountopts",subvol=@home "$BTRFS" /mnt/home
-    mount -o "$mountopts",subvol=@var_log "$BTRFS" /mnt/var/log
-    mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
-    mount -o "$mountopts",subvol=@swap "$BTRFS" /mnt/swap
-
+    for subvol in "${subvols[@]:1}"; do
+        mount -o "$mountopts",subvol=@"$subvol" "$BTRFS" /mnt/"${subvol//_//}"
+    done
     chmod 750 /mnt/root
+    mount -o "$mountopts",subvol=@snapshots "$BTRFS" /mnt/.snapshots
     chattr +C /mnt/var/log
-    mount "$efi_part" /mnt/boot/
+    mount "$efi_part" /mnt/boot
 
     info_print "Creating swap file..."
     if [[ "$swap_size" != "0" ]]; then
@@ -229,7 +242,7 @@ kernel_selector() {
     info_print "4) Zen Kernel: A Linux kernel optimized for desktop usage"
     input_print "Please select the number of the corresponding kernel (e.g. 1): " 
     read -r kernel_choice
-    case $kernel_choice in
+    case "$kernel_choice" in
         1 ) kernel="linux"
             return 0;;
         2 ) kernel="linux-hardened"
@@ -256,18 +269,14 @@ microcode_detector() {
 
 aur_helper_selector() {
     info_print "AUR helpers are used to install packages from the Arch User Repository (AUR)."
-    error_print "If skipped, Re-greetd and Hyprland will not be set up for autologin."
     input_print "Choose an AUR helper to install (yay/paru, leave empty to skip): "
     read -r aur_helper
     case "$aur_helper" in
         yay|paru)
-            aur_bool=1
             info_print "AUR helper $aur_helper will be installed for user $username."
             ;;
         '')
-            aur_bool=0
             info_print "No AUR helper will be installed."
-            return 1
             ;;
         *)
             error_print "Invalid choice. Supported: yay, paru."
@@ -279,30 +288,13 @@ aur_helper_selector() {
 
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
-    arch-chroot /mnt /bin/bash -c "
-        sudo -u $username bash -c '
-            cd ~
-            git clone https://aur.archlinux.org/$aur_helper.git
-            cd $aur_helper
-            makepkg -si --noconfirm
-        '
-    "
-}
-
-setup_greetd_hyprland() {
-    arch-chroot /mnt /bin/bash -c "
-        $aur_helper -S --noconfirm greetd-regreet-git
-        mkdir -p /etc/greetd
-        cat > /etc/greetd/config.toml <<EOF
-[terminal]
-vt = 1
-
-[default_session]
-command = \"Hyprland\"
-user = \"$username\"
+    arch-chroot /mnt /bin/bash <<EOF
+sudo -u "$username" bash -c 'cd ~
+git clone https://aur.archlinux.org/$aur_helper.git'
+cd "$aur_helper"
+makepkg -si --noconfirm'
 EOF
-    "
-    info_print "Re-greetd & Hyprland have been set up for autologin."
+    info_print "AUR helper $aur_helper has been installed for user $username."
 }
 
 read_pkglist() {
@@ -320,7 +312,7 @@ read_pkglist() {
 
 package_install() {
     read_pkglist
-    packages+=("$kernel" "$kernel-headers" "$microcode")
+    packages+=("$kernel" "$kernel"-headers "$microcode")
 
     info_print "Installing packages: ${packages[*]}"
     pacstrap -K /mnt "${packages[@]}"
@@ -389,9 +381,10 @@ keyboard_selector() {
 #               Hostname/Users/Bootloader installation
 #└──────────────────────────────  ──────────────────────────────┘
 hostname_selector() {
-    input_print "Please enter the hostname: "
+    input_print "Please enter the hostname (it must contain from 1 to 63 characters, using only lowercase a to z, 0 to 9): "
     read -r hostname
     if [[ -z "$hostname" ]]; then
+        echo
         error_print "You need to enter a hostname in order to continue."
         return 1
     fi
@@ -416,7 +409,6 @@ set_usernpasswd() {
     read -r -s userpasswd2
     echo
     if [[ "$userpasswd" != "$userpasswd2" ]]; then
-        echo
         error_print "Passwords don't match, please try again."
         return 1
     fi
@@ -452,20 +444,18 @@ clear
 
 # ASCII Font: NScript
 echo -ne "${BOLD}${GREEN}
-
  ,ggg,      gg      ,gg                                                                ,ggg,                                  
-dP""Y8a     88     ,8P       ,dPYb, ,dPYb,                                            dP""8I                        ,dPYb,    
-Yb, `88     88     d8'       IP'`Yb IP'`Yb                                           dP   88                        IP'`Yb    
- `"  88     88     88   gg   I8  8I I8  8I                                          dP    88                        I8  8I    
-     88     88     88   ""   I8  8' I8  8'                                         ,8'    88                        I8  8'    
+dP\"\"Y8a     88     ,8P       ,dPYb, ,dPYb,                                            dP\"\"8I                        ,dPYb,    
+Yb, \`88     88     d8'       IP'\`Yb IP'\`Yb                                           dP   88                        IP'\`Yb    
+ \`\"  88     88     88   gg   I8  8I I8  8I                                          dP    88                        I8  8I    
+     88     88     88   \"\"   I8  8' I8  8'                                         ,8'    88                        I8  8'    
      88     88     88   gg   I8 dP  I8 dP    ,ggggg,    gg    gg    gg             d88888888    ,gggggg,    ,gggg,  I8 dPgg,  
-     88     88     88   88   I8dP   I8dP    dP"  "Y8ggg I8    I8    88bg     __   ,8"     88    dP""""8I   dP"  "Yb I8dP" "8I 
-     Y8    ,88,    8P   88   I8P    I8P    i8'    ,8I   I8    I8    8I      dP"  ,8P      Y8   ,8'    8I  i8'       I8P    I8 
-      Yb,,d8""8b,,dP  _,88,_,d8b,_ ,d8b,_ ,d8,   ,d8'  ,d8,  ,d8,  ,8I      Yb,_,dP       `8b,,dP     Y8,,d8,_    _,d8     I8,
-       "88"    "88"   8P""Y88P'"Y888P'"Y88P"Y8888P"    P""Y88P""Y88P"        "Y8P"         `Y88P      `Y8P""Y8888PP88P     `Y8
-                                                                                                                              
-${RESET}"
+     88     88     88   88   I8dP   I8dP    dP\"  \"Y8ggg I8    I8    88bg     __   ,8\"     88    dP\"\"\"\"8I   dP\"  \"Yb I8dP\" \"8I 
+     Y8    ,88,    8P   88   I8P    I8P    i8'    ,8I   I8    I8    8I      dP\"  ,8P      Y8   ,8'    8I  i8'       I8P    I8 
+      Yb,,d8\"\"8b,,dP  _,88,_,d8b,_ ,d8b,_ ,d8,   ,d8'  ,d8,  ,d8,  ,8I      Yb,_,dP       \`8b,,dP     Y8,,d8,_    _,d8     I8,
+       \"88\"    \"88\"   8P\"\"Y88P'\"Y888P'\"Y88P\"Y8888P\"    P\"\"Y88P\"\"Y88P\"        \"Y8P\"         \`Y88P      \`Y8P\"\"Y8888PP88P     \`Y8
 
+${RESET}"
 info_print "Welcome to the Willow-Arch! A somewhat flexible archlinux installation script"
 
 check_uefi
@@ -479,8 +469,11 @@ if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
 fi
 
 info_print "Please select a disk for partitioning:"
-
 select_disk
+info_print "Wiping $disk."
+wipefs -af "$disk" &>/dev/null
+sgdisk -Zo "$disk" &>/dev/null
+
 partition_disk
 format_partitions
 mount_partitions
@@ -505,13 +498,15 @@ sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
 echo "LANG=$locale" > /mnt/etc/locale.conf
 echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
 
+virt_check
+
 info_print "Configuring /etc/mkinitcpio.conf."
 cat > /mnt/etc/mkinitcpio.conf <<EOF
-HOOKS=(base systemd autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt lvm2 filesystems fsck grub-btrfs-overlayfs)
+HOOKS=(base systemd btrfs autodetect microcode modconf kms keyboard sd-vconsole block sd-encrypt filesystems fsck grub-btrfs-overlayfs)
 EOF
 
 info_print "Setting up grub config."
-UUID=$(blkid -s UUID -o value $root_part)
+UUID=$(blkid -s UUID -o value "$root_part")
 sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
 
 info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
@@ -539,7 +534,7 @@ arch-chroot /mnt /bin/bash -e <<EOF
     chmod 750 /.snapshots
 
     # Installing GRUB.
-    grub-install --target=x86_64-efi --efi-directory=/boot/ --bootloader-id=GRUB &>/dev/null
+    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB &>/dev/null
 
     # Creating grub config file.
     grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
@@ -558,7 +553,7 @@ if [[ -n "$username" ]]; then
 fi
 
 info_print "Configuring /boot backup when pacman transactions are made."
-mkdir -p /mnt/etc/pacman.d/hooks
+mkdir /mnt/etc/pacman.d/hooks
 cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
 [Trigger]
 Operation = Upgrade
@@ -578,19 +573,17 @@ info_print "Enabling colours, animations, and parallel downloads for pacman."
 sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
 
 info_print "Enabling multilib repository in pacman.conf."
-sed -i '/^\[multilib\]/,/^$/{s/^#//}' /mnt/etc/pacman.conf
+sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
 
 until aur_helper_selector; do : ; done
-if [[ $aur_bool -eq 1 ]]; then
-    install_aur_helper
-    setup_greetd_hyprland
-fi
+install_aur_helper
 
-info_print "Enabling Reflector, automatic snapshots and BTRFS scrubbing"
-services=(greetd reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service)
+info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
+services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
+info_print "Remember to unmount all partitions before rebooting."
 exit
