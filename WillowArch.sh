@@ -192,7 +192,7 @@ format_partitions() {
     done
     input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
     read -r swap_size
-    [ "$swap_size" -ne 0 ] && btrfs su cr /mnt/@swap
+    [ "$swap_size" != "0" ] && btrfs su cr /mnt/@swap
     umount /mnt
     info_print "Subvolumes created successfully"
 }
@@ -317,7 +317,7 @@ fstab_file() {
     info_print "Generating fstab file..."
     genfstab -U /mnt >> /mnt/etc/fstab
     
-    if [[ "swap_size" -ne 0 ]]; then
+    if [[ "swap_size" != "0" ]]; then
         info_print "Adding swapfile entry to fstab..."
         echo "/.swap/swapfile none swap defaults 0 0" >> /mnt/etc/fstab
     fi
