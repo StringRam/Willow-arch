@@ -316,11 +316,6 @@ package_install() {
 fstab_file() {
     info_print "Generating fstab file..."
     genfstab -U /mnt >> /mnt/etc/fstab
-    
-    if [[ "swap_size" != "0" ]]; then
-        info_print "Adding swapfile entry to fstab..."
-        echo "/.swap/swapfile none swap defaults 0 0" >> /mnt/etc/fstab
-    fi
 
     echo
     info_print "Here is the final /etc/fstab content:"
