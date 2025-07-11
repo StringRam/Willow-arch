@@ -146,7 +146,7 @@ t
 
 23
 w
-EOF &>/dev/null
+EOF
         efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
         root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
         info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
@@ -284,7 +284,7 @@ sudo -u "$username" bash -c 'cd ~
 git clone https://aur.archlinux.org/$aur_helper.git'
 cd "$aur_helper"
 makepkg -si --noconfirm'
-EOF &>/dev/null
+EOF
     info_print "AUR helper $aur_helper has been installed for user $username."
 }
 
@@ -317,7 +317,7 @@ fstab_file() {
     info_print "Generating fstab file..."
     genfstab -U /mnt >> /mnt/etc/fstab
     
-    if [["swap_size" -ne 0]] then
+    if [[ "swap_size" -ne 0 ]]; then
         info_print "Adding swapfile entry to fstab..."
         echo "/.swap/swapfile none swap defaults 0 0" >> /mnt/etc/fstab
     fi
@@ -506,7 +506,7 @@ HOOKS=(systemd autodetect microcode keyboard sd-vconsole modconf kms block sd-en
 EOF
 
 info_print "Setting up grub config."
-UUID=$(blkid -s UUID -o value $root_part)
+UUID=$(blkid -s UUID -o value "$root_part")
 sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
 
 info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
