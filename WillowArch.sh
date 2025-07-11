@@ -61,9 +61,7 @@ check_clock_sync() {
     else
         error_print "Warning: System clock is NOT synchronized."
         info_print "Trying to enable time synchronization..."
-
         timedatectl set-ntp true
-
         sleep 2
         sync_status=$(timedatectl show -p NTPSynchronized --value)
         if [[ "$sync_status" == "yes" ]]; then
@@ -80,23 +78,23 @@ virt_check () {
     hypervisor=$(systemd-detect-virt)
     case $hypervisor in
         kvm )   info_print "KVM has been detected, setting up guest tools."
-                pacstrap /mnt qemu-guest-agent
-                systemctl enable qemu-guest-agent --root=/mnt
+                pacstrap /mnt qemu-guest-agent &>/dev/null
+                systemctl enable qemu-guest-agent --root=/mnt &>/dev/null
                 ;;
         vmware  )   info_print "VMWare Workstation/ESXi has been detected, setting up guest tools."
-                    pacstrap /mnt open-vm-tools >/dev/null
-                    systemctl enable vmtoolsd --root=/mnt
-                    systemctl enable vmware-vmblock-fuse --root=/mnt
+                    pacstrap /mnt open-vm-tools &>/dev/null
+                    systemctl enable vmtoolsd --root=/mnt &>/dev/null
+                    systemctl enable vmware-vmblock-fuse --root=/mnt &>/dev/null
                     ;;
         oracle )    info_print "VirtualBox has been detected, setting up guest tools."
-                    pacstrap /mnt virtualbox-guest-utils
-                    systemctl enable vboxservice --root=/mnt
+                    pacstrap /mnt virtualbox-guest-utils &>/dev/null
+                    systemctl enable vboxservice --root=/mnt &>/dev/null
                     ;;
         microsoft ) info_print "Hyper-V has been detected, setting up guest tools."
-                    pacstrap /mnt hyperv
-                    systemctl enable hv_fcopy_daemon --root=/mnt
-                    systemctl enable hv_kvp_daemon --root=/mnt
-                    systemctl enable hv_vss_daemon --root=/mnt
+                    pacstrap /mnt hyperv &>/dev/null
+                    systemctl enable hv_fcopy_daemon --root=/mnt &>/dev/null
+                    systemctl enable hv_kvp_daemon --root=/mnt &>/dev/null
+                    systemctl enable hv_vss_daemon --root=/mnt &>/dev/null
                     ;;
     esac
 }
@@ -148,7 +146,7 @@ t
 
 23
 w
-EOF
+EOF &>/dev/null
         efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
         root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
         info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
@@ -188,11 +186,13 @@ format_partitions() {
     mount "$BTRFS" /mnt
 
     info_print "Creating Btrfs subvolumes..."
-    subvols=(snapshots var_log home root swap)
+    subvols=(snapshots var_log home root srv)
     for subvol in '' "${subvols[@]}"; do
         btrfs su cr /mnt/@"$subvol"
     done
-
+    input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
+    read -r swap_size
+    [ "$swap_size" -ne 0 ] && btrfs su cr /mnt/@swap
     umount /mnt
     info_print "Subvolumes created successfully"
 }
@@ -201,7 +201,7 @@ mount_partitions() {
     info_print "Mounting subvolumes..."
     mountopts="ssd,noatime,compress-force=zstd:3,discard=async"
     mount -o "$mountopts",subvol=@ "$BTRFS" /mnt
-    mkdir -p /mnt/{home,root,.snapshots,var/log,boot,swap}
+    mkdir -p /mnt/{home,root,srv,.snapshots,var/log,boot}
     for subvol in "${subvols[@]:1}"; do
         mount -o "$mountopts",subvol=@"$subvol" "$BTRFS" /mnt/"${subvol//_//}"
     done
@@ -210,14 +210,12 @@ mount_partitions() {
     chattr +C /mnt/var/log
     mount "$efi_part" /mnt/boot
 
-    input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
-    read -r swap_size
-    info_print "Creating swap file..."
     if [[ "$swap_size" != "0" ]]; then
-        mkdir -p /mnt/swap
-        chattr +C /mnt/swap
-        btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/swap/swapfile
-        swapon /mnt/swap/swapfile
+        info_print "Creating swap file..."
+        mkdir -p /mnt/.swap
+        mount -o "$mountopts",subvol=@swap "$BTRFS" /mnt/.swap
+        btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/.swap/swapfile
+        swapon /mnt/.swap/swapfile
     else
         info_print "No swap file will be created."
     fi
@@ -286,7 +284,7 @@ sudo -u "$username" bash -c 'cd ~
 git clone https://aur.archlinux.org/$aur_helper.git'
 cd "$aur_helper"
 makepkg -si --noconfirm'
-EOF
+EOF &>/dev/null
     info_print "AUR helper $aur_helper has been installed for user $username."
 }
 
@@ -308,7 +306,7 @@ package_install() {
     packages+=("$kernel" "$kernel"-headers "$microcode")
 
     info_print "Installing packages: ${packages[*]}"
-    pacstrap -K /mnt "${packages[@]}"
+    pacstrap -K /mnt "${packages[@]}" &>/dev/null
 }
 
 
@@ -319,9 +317,9 @@ fstab_file() {
     info_print "Generating fstab file..."
     genfstab -U /mnt >> /mnt/etc/fstab
     
-    if ! grep -q "^/swap/swapfile" /mnt/etc/fstab; then
+    if [["swap_size" -ne 0]] then
         info_print "Adding swapfile entry to fstab..."
-        echo "/swap/swapfile none swap defaults 0 0" >> /mnt/etc/fstab
+        echo "/.swap/swapfile none swap defaults 0 0" >> /mnt/etc/fstab
     fi
 
     echo
@@ -473,8 +471,8 @@ until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
 
 info_print "Wiping $disk."
-wipefs -af "$disk"
-sgdisk -Zo "$disk"
+wipefs -af "$disk" &>/dev/null
+sgdisk -Zo "$disk" &>/dev/null
 
 partition_disk
 format_partitions
@@ -493,6 +491,13 @@ sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
 echo "LANG=$locale" > /mnt/etc/locale.conf
 echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
 
+info_print "Setting hosts file."
+cat > /mnt/etc/hosts <<EOF
+127.0.0.1   localhost
+::1         localhost
+127.0.1.1   $hostname.localdomain   $hostname
+EOF
+
 virt_check
 
 info_print "Configuring /etc/mkinitcpio.conf."
@@ -508,31 +513,31 @@ info_print "Configuring the system (timezone, system clock, initramfs, Snapper, 
 arch-chroot /mnt /bin/bash -e <<EOF
 
     # Setting up timezone.
-    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime
+    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime &>/dev/null
 
     # Setting up clock.
     hwclock --systohc
 
     # Generating locales.
-    locale-gen
+    locale-gen &>/dev/null
 
     # Generating a new initramfs.
-    mkinitcpio -P
+    mkinitcpio -P &>/dev/null
 
     # Snapper configuration.
     umount /.snapshots
     rm -r /.snapshots
     snapper --no-dbus -c root create-config /
-    btrfs subvolume delete /.snapshots
+    btrfs subvolume delete /.snapshots &>/dev/null
     mkdir /.snapshots
-    mount -a
+    mount -a &>/dev/null
     chmod 750 /.snapshots
 
     # Installing GRUB.
-    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB &>/dev/null
 
     # Creating grub config file.
-    grub-mkconfig -o /boot/grub/grub.cfg
+    grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
 
 EOF
 
@@ -576,7 +581,7 @@ install_aur_helper
 info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service)
 for service in "${services[@]}"; do
-    systemctl enable "$service" --root=/mnt
+    systemctl enable "$service" --root=/mnt &>/dev/null
 done
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
