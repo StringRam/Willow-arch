@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/usr/bin/env -S bash -e
 
 # Willow Archlinux installation script for personal use.
 # This set up uses a GPT partition table: p1 EFI_System 512Mb
@@ -501,7 +501,7 @@ HOOKS=(systemd autodetect microcode keyboard sd-vconsole modconf kms block sd-en
 EOF
 
 info_print "Setting up grub config."
-UUID=$(blkid -s UUID -o value "$root_part")
+UUID=$(blkid -s UUID -o value $root_part)
 sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
 
 info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
