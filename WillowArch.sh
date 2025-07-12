@@ -173,10 +173,10 @@ set_luks_passwd() {
 
 format_partitions() {
     info_print "Formatting partitions..."
-    mkfs.fat -F 32 "$efi_part"
+    mkfs.fat -F 32 "$efi_part" &>/dev/null
 
-    echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d -
-    echo -n "$encryption_passwd" | cryptsetup open "$root_part" cryptroot -d -
+    echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
+    echo -n "$encryption_passwd" | cryptsetup open "$root_part" cryptroot -d - &>/dev/null
     BTRFS="/dev/mapper/cryptroot"
     mkfs.btrfs "$BTRFS"
     mount "$BTRFS" /mnt
