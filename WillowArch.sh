@@ -117,15 +117,36 @@ select_disk() {
 # Note: experiment with both fdisk and parted tomorrow to find out if it is necessary to change this implementation
 partition_disk() {
     info_print "Partitioning disk $disk..."
-    parted -s "$disk" \
-    mklabel gpt \
-    mkpart esp fat32 1MiB 513MiB \
-    set 1 esp on \
-    mkpart root 513MiB 100% \
+    if [[ "${custom,,}" =~ ^(yes|y)$ ]]; then
+        fdisk "$disk"
+        info_print "Custom layout complete."
+        lsblk "$disk"
+        input_print "Enter EFI partition (e.g., /dev/nvme0n1p1): "
+        read -r efi_part
+        input_print "Enter root partition (e.g., /dev/nvme0n1p2): "
+        read -r root_part
+    else
+        fdisk "$disk" <<EOF
+g
+n
 
-    efi_part="/dev/disk/by-partlabel/esp"
-    root_part="/dev/disk/by-partlabel/root"
-    info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
+
++512M
+t
+1
+n
+
+
+
+t
+
+23
+w
+EOF
+        efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
+        root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
+        info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
+    fi
     info_print "Informing the Kernel about the disk changes."
     partprobe "$disk"
 }
@@ -155,8 +176,8 @@ format_partitions() {
     mkfs.fat -F 32 "$efi_part"
 
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d -
-    echo -n "$encryption_passwd" | cryptsetup open "$root_part" root -d -
-    BTRFS="/dev/mapper/root"
+    echo -n "$encryption_passwd" | cryptsetup open "$root_part" cryptroot -d -
+    BTRFS="/dev/mapper/cryptroot"
     mkfs.btrfs "$BTRFS"
     mount "$BTRFS" /mnt
 
@@ -255,7 +276,7 @@ aur_helper_selector() {
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
     arch-chroot /mnt /bin/bash <<EOF
-sudo -u "$username" bash -c 'cd /tmp
+sudo -u "$username" bash -c 'cd ~
 git clone https://aur.archlinux.org/$aur_helper.git'
 cd "$aur_helper"
 makepkg -si --noconfirm'
