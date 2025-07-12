@@ -45,11 +45,6 @@
 - Clear section titles and separators
 
 
-## Work In Progress
-- Gaming related configs 
-- Dotfile sync and integration  
-
-
 ## 🗂️ Btrfs Subvolume Layout
 
 ```plaintext
