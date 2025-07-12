@@ -277,8 +277,7 @@ install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
     arch-chroot /mnt /bin/bash <<EOF
 sudo -u "$username" bash -c 'cd ~
-git clone https://aur.archlinux.org/$aur_helper.git
-cd "$aur_helper"
+git clone https://aur.archlinux.org/$aur_helper.git && cd "$aur_helper"
 makepkg -si --noconfirm
 '
 EOF
@@ -566,15 +565,16 @@ sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/e
 
 info_print "Enabling multilib repository in pacman.conf."
 sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
-
-until aur_helper_selector; do : ; done
-install_aur_helper
+arch-chroot /mnt pacman -Sy --noconfirm &>/dev/null
 
 info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
+
+until aur_helper_selector; do : ; done
+install_aur_helper
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
 info_print "Remember to unmount all partitions before rebooting."
