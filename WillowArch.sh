@@ -116,38 +116,16 @@ select_disk() {
 
 # Note: experiment with both fdisk and parted tomorrow to find out if it is necessary to change this implementation
 partition_disk() {
-    input_print "Do you wish to make a custom partition layout? [y/N]: "
-    read -r custom
     info_print "Partitioning disk $disk..."
+    parted -s "$DISK" \
+    mklabel gpt \
+    mkpart esp fat32 1MiB 513MiB \
+    set 1 esp on \
+    mkpart root 513MiB 100% \
 
-    if [[ "${custom,,}" =~ ^(yes|y)$ ]]; then
-        fdisk "$disk"
-        info_print "Custom layout complete."
-        lsblk "$disk"
-        input_print "Enter EFI partition (e.g., /dev/nvme0n1p1): "
-        read -r efi_part
-        input_print "Enter root partition (e.g., /dev/nvme0n1p2): "
-        read -r root_part
-
-    else
-        fdisk "$disk" <<EOF
-g
-n
-
-
-+512M
-t
-1
-n
-
-
-
-w
-EOF
-        efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
-        root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
-        info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
-    fi
+    efi_part="/dev/disk/by-partlabel/esp"
+    root_part="/dev/disk/by-partlabel/root"
+    info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
     info_print "Informing the Kernel about the disk changes."
     partprobe "$disk"
 }
