@@ -276,10 +276,12 @@ aur_helper_selector() {
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
     arch-chroot /mnt /bin/bash <<EOF
-sudo -u "$username" bash -c 'cd ~
+sudo -u "$username" bash -c '
+cd /home/$username
 git clone https://aur.archlinux.org/$aur_helper.git'
 cd "$aur_helper"
-makepkg -si --noconfirm'
+makepkg -si --noconfirm
+'
 EOF
     info_print "AUR helper $aur_helper has been installed for user $username."
 }
