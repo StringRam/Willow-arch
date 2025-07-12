@@ -117,7 +117,7 @@ select_disk() {
 # Note: experiment with both fdisk and parted tomorrow to find out if it is necessary to change this implementation
 partition_disk() {
     info_print "Partitioning disk $disk..."
-    parted -s "$DISK" \
+    parted -s "$disk" \
     mklabel gpt \
     mkpart esp fat32 1MiB 513MiB \
     set 1 esp on \
