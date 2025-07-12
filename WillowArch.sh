@@ -134,12 +134,11 @@ parted -s "$disk" \
 set_luks_passwd() {
     input_print "Enter your LUKS container password (for security purposes you won't see it): "
     read -r -s encryption_passwd
+    echo
     if [[ -z "$encryption_passwd" ]]; then
-        echo
         error_print "You must enter a password for the LUKS container. Try again"
         return 1
     fi
-    echo
     input_print "Enter your LUKS container password again (for security purposes you won't see it): "
     read -r -s encryption_passwd2
     echo
@@ -344,8 +343,8 @@ keyboard_selector() {
 hostname_selector() {
     input_print "Please enter the hostname (it must contain from 1 to 63 characters, using only lowercase a to z, 0 to 9): "
     read -r hostname
+    echo
     if [[ -z "$hostname" ]]; then
-        echo
         error_print "You need to enter a hostname in order to continue."
         return 1
     fi
@@ -355,17 +354,17 @@ hostname_selector() {
 set_usernpasswd() {
     input_print "Please enter name for a user account: "
     read -r username
+    echo
     if [[ -z "$username" ]]; then
         return 1
     fi
     input_print "Please enter a password for $username (you're not going to see the password): "
     read -r -s userpasswd
+    echo
     if [[ -z "$userpasswd" ]]; then
-        echo
         error_print "You need to enter a password for $username, please try again."
         return 1
     fi
-    echo
     input_print "Please enter the password again (you're not going to see it): " 
     read -r -s userpasswd2
     echo
@@ -379,12 +378,11 @@ set_usernpasswd() {
 set_rootpasswd() {
     input_print "Please enter a password for the root user (you're not going to see it): "
     read -r -s rootpasswd
+    echo
     if [[ -z "$rootpasswd" ]]; then
-        echo
         error_print "You need to enter a password for the root user, please try again."
         return 1
     fi
-    echo
     input_print "Please enter the password again (you're not going to see it): " 
     read -r -s rootpasswd2
     echo
