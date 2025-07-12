@@ -189,7 +189,7 @@ mount_partitions() {
         info_print "Creating swap file..."
         mkdir -p /mnt/.swap
         mount -o compress=zstd,subvol=@swap "$BTRFS" /mnt/.swap
-        btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/.swap/swapfile
+        btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/.swap/swapfile &>/dev/null
         swapon /mnt/.swap/swapfile
     else
         info_print "No swap file will be created."
