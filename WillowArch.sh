@@ -278,8 +278,7 @@ install_aur_helper() {
     arch-chroot /mnt /bin/bash <<EOF
 sudo -u "$username" bash -c 'cd ~
 git clone https://aur.archlinux.org/$aur_helper.git && cd "$aur_helper"
-makepkg -si --noconfirm
-'
+makepkg -si --noconfirm'
 EOF
     info_print "AUR helper $aur_helper has been installed for user $username."
 }
