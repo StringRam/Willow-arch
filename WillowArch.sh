@@ -188,7 +188,7 @@ mount_partitions() {
     if [[ "$swap_size" != "0" ]]; then
         info_print "Creating swap file..."
         mkdir -p /mnt/.swap
-        mount -o "$mountopts",subvol=@swap "$BTRFS" /mnt/.swap
+        mount -o compress=zstd,subvol=@swap "$BTRFS" /mnt/.swap
         btrfs filesystem mkswapfile --size "$swap_size" --uuid clear /mnt/.swap/swapfile
         swapon /mnt/.swap/swapfile
     else
@@ -255,7 +255,7 @@ aur_helper_selector() {
 install_aur_helper() {
     [[ -z "$aur_helper" || -z "$username" ]] && return
     arch-chroot /mnt /bin/bash <<EOF
-sudo -u "$username" bash -c 'cd ~
+sudo -u "$username" bash -c 'cd /tmp
 git clone https://aur.archlinux.org/$aur_helper.git'
 cd "$aur_helper"
 makepkg -si --noconfirm'
