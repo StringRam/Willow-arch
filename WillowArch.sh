@@ -117,36 +117,16 @@ select_disk() {
 # Note: experiment with both fdisk and parted tomorrow to find out if it is necessary to change this implementation
 partition_disk() {
     info_print "Partitioning disk $disk..."
-    if [[ "${custom,,}" =~ ^(yes|y)$ ]]; then
-        fdisk "$disk"
-        info_print "Custom layout complete."
-        lsblk "$disk"
-        input_print "Enter EFI partition (e.g., /dev/nvme0n1p1): "
-        read -r efi_part
-        input_print "Enter root partition (e.g., /dev/nvme0n1p2): "
-        read -r root_part
-    else
-        fdisk "$disk" <<EOF
-g
-n
+parted -s "$disk" \
+    mklabel gpt \
+    mkpart esp fat32 1MiB 513MiB \
+    set 1 esp on \
+    mkpart root 513MiB 100% \
 
+    efi_part="/dev/disk/by-partlabel/esp"
+    root_part="/dev/disk/by-partlabel/root"
 
-+512M
-t
-1
-n
-
-
-
-t
-
-23
-w
-EOF
-        efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
-        root_part=$(lsblk -lnpo NAME "$disk" | sed -n '3p')
-        info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
-    fi
+    info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
     info_print "Informing the Kernel about the disk changes."
     partprobe "$disk"
 }
@@ -176,19 +156,19 @@ format_partitions() {
     mkfs.fat -F 32 "$efi_part" &>/dev/null
 
     echo -n "$encryption_passwd" | cryptsetup luksFormat "$root_part" -d - &>/dev/null
-    echo -n "$encryption_passwd" | cryptsetup open "$root_part" cryptroot -d - &>/dev/null
+    echo -n "$encryption_passwd" | cryptsetup open "$root_part" cryptroot -d -
     BTRFS="/dev/mapper/cryptroot"
-    mkfs.btrfs "$BTRFS"
+    mkfs.btrfs "$BTRFS" &>/dev/null
     mount "$BTRFS" /mnt
 
     info_print "Creating Btrfs subvolumes..."
     subvols=(snapshots var_log home root srv)
     for subvol in '' "${subvols[@]}"; do
-        btrfs su cr /mnt/@"$subvol"
+        btrfs su cr /mnt/@"$subvol" &>/dev/null
     done
     input_print "Please set a swap size[k/m/g/e/p suffix, 0=no swap]: "
     read -r swap_size
-    [ "$swap_size" != "0" ] && btrfs su cr /mnt/@swap
+    [ "$swap_size" != "0" ] && btrfs su cr /mnt/@swap &>/dev/null
     umount /mnt
     info_print "Subvolumes created successfully"
 }
