@@ -142,9 +142,6 @@ n
 
 
 
-t
-
-23
 w
 EOF
         efi_part=$(lsblk -lnpo NAME "$disk" | sed -n '2p')
