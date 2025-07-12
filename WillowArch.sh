@@ -343,8 +343,8 @@ keyboard_selector() {
 hostname_selector() {
     input_print "Please enter the hostname (it must contain from 1 to 63 characters, using only lowercase a to z, 0 to 9): "
     read -r hostname
-    echo
     if [[ -z "$hostname" ]]; then
+        echo
         error_print "You need to enter a hostname in order to continue."
         return 1
     fi
@@ -354,7 +354,6 @@ hostname_selector() {
 set_usernpasswd() {
     input_print "Please enter name for a user account: "
     read -r username
-    echo
     if [[ -z "$username" ]]; then
         return 1
     fi
