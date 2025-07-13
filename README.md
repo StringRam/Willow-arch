@@ -52,6 +52,7 @@
 ├── @               → /
 ├── @home           → /home
 ├── @var_log        → /var/log
+├── @srv            → /srv
 ├── @snapshots      → /.snapshots
 └── @swap           → /swap
 ```
