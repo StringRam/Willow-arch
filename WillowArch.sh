@@ -536,8 +536,8 @@ When = PostTransaction
 Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 EOF
 
-info_print "Enabling colours, animations, and parallel downloads for pacman."
-sed -Ei 's/^#(Color)$/\1\nILoveCandy/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
+info_print "Enabling colours and parallel downloads for pacman."
+sed -Ei 's/^#(Color)$/\1/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
 
 info_print "Enabling multilib repository in pacman.conf."
 sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
