@@ -4,6 +4,9 @@
 adobe-source-han-sans-cn-fonts
 adobe-source-han-sans-jp-fonts
 adobe-source-han-sans-kr-fonts
+otf-font-awesome
+ttf-jetbrains-mono-nerd
+
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                           (Base System)
@@ -14,6 +17,7 @@ linux-firmware
 man-db
 man-pages
 texinfo
+
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                            (Utilities)
@@ -52,3 +56,4 @@ valgrind
 #                          (Miscellaneous)
 #└──────────────────────────────  ──────────────────────────────┘
 xdg-user-dirs
+plymouth
