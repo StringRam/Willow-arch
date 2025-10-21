@@ -21,6 +21,11 @@ YELLOW='\033[33m'
 # Reset color
 RESET='\033[0m'
 
+# Absolute path to the directory containing this script. Using this ensures we
+# can reliably reference resources that live alongside the script even when the
+# installer is launched from another working directory.
+SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+
 info_print () {
     echo -e "${BOLD}${GREEN}[ o ] $1${RESET}"
 }
@@ -263,8 +268,13 @@ EOF
 }
 
 read_pkglist() {
-    local pkgfile="pkglist.txt"
+    local pkgfile="$SCRIPT_DIR/pkglist.txt"
     packages=()
+
+    if [[ ! -r "$pkgfile" ]]; then
+        error_print "Package list file not found: $pkgfile"
+        exit 1
+    fi
 
     while IFS= read -r line || [[ -n $line ]]; do
         # Skip empty lines and comment lines starting with #
