@@ -332,7 +332,7 @@ keyboard_selector() {
 #               Hostname/Users/Bootloader installation
 #└──────────────────────────────  ──────────────────────────────┘
 hostname_selector() {
-    tui_readline hostname "Please enter the hostname (it must contain from 1 to 63 characters, using only lowercase a to z, 0 to 9): "
+    tui_readline hostname "Please enter a hostname (1 to 63 characters, lowercase, 0 to 9): "
     if [[ -z "$hostname" ]]; then
         echo
         error_print "You need to enter a hostname in order to continue."
