@@ -2,6 +2,18 @@
 #                           CMD output stuff
 #└──────────────────────────────  ──────────────────────────────┘
 
+: "${RUN_TUI:=1}"
+
+_log_add() { # fallback si no hay TUI
+  if declare -F log_add >/dev/null; then log_add "$@"
+  else printf '[%s] %s\n' "$1" "${*:2}" >&2
+  fi
+}
+_info() { declare -F info_print >/dev/null && info_print "$@" || printf '%s\n' "$*" >&2; }
+_err()  { declare -F error_print >/dev/null && error_print "$@" || printf '%s\n' "$*" >&2; }
+_refresh(){ declare -F tui_refresh_throttled >/dev/null && tui_refresh_throttled || true; }
+_render(){ declare -F render_content >/dev/null && render_content || true; }
+
 sanitize_stream() {
   # - tr: quita carriage-return (progreso tipo “spinner”)
   # - sed: quita secuencias ANSI (colores/progreso)
@@ -34,3 +46,4 @@ run_cmd() { # run_cmd LEVEL "Label" -- cmd args...
   render_content
   return "$rc"
 }
+

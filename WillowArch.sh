@@ -15,6 +15,11 @@
 
 set -Eeuo pipefail
 SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+source "$SCRIPT_DIR/lib/tui.sh"
+source "$SCRIPT_DIR/lib/run.sh"
+
+RUN_STREAM=0
+RUN_TAIL=30
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                              Checks
