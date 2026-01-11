@@ -277,7 +277,7 @@ package_install() {
     packages+=("$kernel" "$kernel"-headers "$microcode")
 
     info_print "Installing packages..."
-    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}" &>/dev/null
+    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}"
 }
 
 
