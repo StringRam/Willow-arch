@@ -214,6 +214,8 @@ tui_readline() { # tui_readline varname "Prompt" [default]
 
   ask_print "$prompt${def:+ (default: $def)}"
 
+  render_content
+
   local r c w
   read -r r c w < <(tui_input_pos)
 
@@ -251,6 +253,44 @@ tui_readsecret() { # tui_readsecret varname "Prompt"
   printf -v "$__var" '%s' "$ans"
   info_print "→ (secret) captured"
 }
+
+tui_pause() { # enter to continue
+  local msg="${1:-Press Enter to continue...}"
+  ask_print "$msg"
+  local _
+  IFS= read -r _ || true
+}
+
+run_cmd_sh() { # run_cmd_sh LEVEL "Label" "shell pipeline..."
+  local level="$1"; shift
+  local label="$1"; shift
+  local script="$1"; shift || true
+  run_cmd "$level" "$label" -- bash -lc "$script"
+}
+
+tui_select_from_list() { # tui_select_from_list outvar "Prompt" items...
+  local __var="$1"; shift
+  local prompt="$1"; shift
+  local -a items=("$@")
+
+  (( ${#items[@]} > 0 )) || { error_print "No options available."; return 1; }
+
+  info_print "$prompt"
+  local i
+  for i in "${!items[@]}"; do
+    info_print "  $((i+1))) ${items[i]}"
+  done
+
+  local idx=""
+  while true; do
+    tui_readline idx "Choose [1-${#items[@]}]:" "1"
+    [[ "$idx" =~ ^[0-9]+$ ]] || { error_print "Invalid number."; continue; }
+    (( idx >= 1 && idx <= ${#items[@]} )) || { error_print "Out of range."; continue; }
+    printf -v "$__var" '%s' "${items[idx-1]}"
+    return 0
+  done
+}
+
 
 # ───────────────────────── Screens ─────────────────────────
 

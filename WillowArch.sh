@@ -91,21 +91,18 @@ virt_check () {
 #                Disk partitioning, formatting, etc.
 #└──────────────────────────────  ──────────────────────────────┘
 select_disk() {
-    info_print "Please select a disk for partitioning:"
-    tui_readline disk_response "Warning: this will wipe the selected disk. Continue [y/N]?: "
-    if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
-        error_print "Quitting..."
-        exit
-    fi
-    info_print "Available disks:"
-    PS3="Please select the number of the corresponding disk (e.g. 1): "
-    select entry in $(lsblk -dpnoNAME|grep -P "/dev/sd|nvme|vd|mmcblk");
-    do
-        disk="$entry"
-        info_print "Arch Linux will be installed on the following disk: $disk"
-        state_set "Installation Disk" "$disk"
-        break
-    done
+  info_print "Please select a disk for partitioning:"
+  tui_readline disk_response "Warning, this will wipe the selected disk, continue [y/N]?: "
+  if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
+    error_print "Quitting..."
+    exit
+  fi
+
+  mapfile -t disks < <(lsblk -dpno NAME | grep -E '^/dev/(sd|nvme|vd|mmcblk)')
+  tui_select_from_list disk "Available disks:" "${disks[@]}"
+
+  info_print "Arch Linux will be installed on: $disk"
+  state_set "Installation Disk" "$disk"
 }
 
 # Note: experiment with both fdisk and parted tomorrow to find out if it is necessary to change this implementation
