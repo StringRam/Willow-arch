@@ -254,18 +254,20 @@ tui_readsecret() { # tui_readsecret varname "Prompt"
   info_print "→ (secret) captured"
 }
 
+tui_pager_cmd() { # tui_pager_cmd -- cmd args...
+  [[ "${1:-}" == "--" ]] && shift
+  exit_alt 2>/dev/null || true
+  "$@" | less -R
+  enter_alt
+  render_frame
+  render_content
+}
+
 tui_pause() { # enter to continue
   local msg="${1:-Press Enter to continue...}"
   ask_print "$msg"
   local _
   IFS= read -r _ || true
-}
-
-run_cmd_sh() { # run_cmd_sh LEVEL "Label" "shell pipeline..."
-  local level="$1"; shift
-  local label="$1"; shift
-  local script="$1"; shift || true
-  run_cmd "$level" "$label" -- bash -lc "$script"
 }
 
 tui_select_from_list() { # tui_select_from_list outvar "Prompt" items...

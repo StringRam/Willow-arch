@@ -296,8 +296,7 @@ locale_selector() {
             info_print "$locale will be the default locale."
             state_set "Locale" "$locale"
             return 0;;
-        '/') sed -E '/^# +|^#$/d;s/^#| *$//g;s/ .*/ (Charset:&)/' /etc/locale.gen | less -M
-                clear
+        '/') tui_pager_cmd -- sed -E '/^# +|^#$/d;s/^#| *$//g;s/ .*/ (Charset:&)/' /etc/locale.gen | less -M
                 return 1;;
         *)  if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<< "$locale") " /etc/locale.gen; then
                 error_print "The specified locale doesn't exist or isn't supported."
@@ -315,8 +314,7 @@ keyboard_selector() {
             info_print "The standard US keyboard layout will be used."
             state_set "Keyboard Layout" "$kblayout"
             return 0;;
-        '/') run_cmd RAW -- localectl list-keymaps
-             clear
+        '/') tui_pager_cmd -- localectl list-keymaps
              return 1;;
         *) if ! localectl list-keymaps | grep -Fxq "$kblayout"; then
                error_print "The specified keymap doesn't exist."
