@@ -33,9 +33,7 @@ fi
 esc() { printf "\033[%s" "$1"; }         # raw ANSI
 hide_cursor() { esc "?25l"; }
 show_cursor() { esc "?25h"; }
-clear_screen() { esc "2J"; esc "H"; }
 move() { tput cup "$1" "$2"; }           # row col
-clear_eol() { esc "K"; }
 
 term_cols() { tput cols; }
 term_lines() { tput lines; }
@@ -481,7 +479,8 @@ render_content() {
 cleanup() {
   show_cursor
   esc "0m"
-  clear_screen
+  exit_alt 2>/dev/null || true
+  clear
 }
 
 # Para que el trap ERR se herede en funciones y subshells
@@ -565,7 +564,7 @@ select_disk() {
     tui_readline disk_response "Warning: this will wipe the selected disk. Continue [y/N]?: "
     if ! [[ "${disk_response,,}" =~ ^(yes|y)$ ]]; then
         error_print "Quitting..."
-        exit_alt
+        exit
     fi
     info_print "Available disks:"
     PS3="Please select the number of the corresponding disk (e.g. 1): "
