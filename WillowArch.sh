@@ -309,10 +309,11 @@ locale_selector() {
 }
 
 keyboard_selector() {
-    tui_readline kblayout "Please insert the keyboard layout to use in console (enter empty to use US, or \"/\" to look up for keyboard layouts): "
+    tui_readline kblayout "Please enter a keyboard layout (empty = US, \"/\" to look up for keyboard layouts): "
     case "$kblayout" in
         '') kblayout="us"
             info_print "The standard US keyboard layout will be used."
+            state_set "Keyboard Layout" "$kblayout"
             return 0;;
         '/') localectl list-keymaps
              clear
