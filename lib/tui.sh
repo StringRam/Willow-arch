@@ -137,7 +137,7 @@ tui_refresh_throttled() {
 info_print()  { log_add INFO "$*"; tui_refresh_throttled; }
 error_print() { log_add ERR  "$*"; tui_refresh_throttled; }
 ask_print()   { log_add ASK  "$*"; tui_refresh_throttled; }
-
+raw_print()   { log_add RAW  "$*"; tui_refresh_throttled; }
 
 log_prefix() { # log_prefix LEVEL -> imprime prefijo ya coloreado
   local level="$1"
@@ -309,7 +309,7 @@ tui_select_from_list() { # tui_select_from_list outvar "Prompt" items...
   info_print "$prompt"
   local i
   for i in "${!items[@]}"; do
-    info_print "  $((i+1))) ${items[i]}"
+    raw_print "  $((i+1))) ${items[i]}"
   done
 
   local idx=""

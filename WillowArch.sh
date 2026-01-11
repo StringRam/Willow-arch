@@ -191,10 +191,10 @@ mount_partitions() {
 #└──────────────────────────────  ──────────────────────────────┘
 kernel_selector() {
     info_print "List of kernels:"
-    info_print "1) Stable: Vanilla Linux kernel with a few specific Arch Linux patches applied"
-    info_print "2) Hardened: A security-focused Linux kernel"
-    info_print "3) Longterm: Long-term support (LTS) Linux kernel"
-    info_print "4) Zen Kernel: A Linux kernel optimized for desktop usage"
+    raw_print "1) Stable: Vanilla Linux kernel with a few specific Arch Linux patches applied"
+    raw_print "2) Hardened: A security-focused Linux kernel"
+    raw_print "3) Longterm: Long-term support (LTS) Linux kernel"
+    raw_print "4) Zen Kernel: A Linux kernel optimized for desktop usage"
     tui_readline kernel_choice "Please select the number of the corresponding kernel (e.g. 1): " 
     case "$kernel_choice" in
         1 ) kernel="linux"
@@ -277,7 +277,7 @@ package_install() {
     packages+=("$kernel" "$kernel"-headers "$microcode")
 
     info_print "Installing packages..."
-    pacstrap -K /mnt "${packages[@]}" &>/dev/null
+    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}" &>/dev/null
 }
 
 
