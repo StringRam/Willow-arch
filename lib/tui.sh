@@ -254,13 +254,32 @@ tui_readsecret() { # tui_readsecret varname "Prompt"
   info_print "→ (secret) captured"
 }
 
-tui_pager_cmd() { # tui_pager_cmd -- cmd args...
-  [[ "${1:-}" == "--" ]] && shift
+tui_suspend() {
+  show_cursor
   exit_alt 2>/dev/null || true
-  "$@" | less -R
+}
+
+tui_resume() {
   enter_alt
   render_frame
   render_content
+}
+
+tui_pager_cmd() { # tui_pager_cmd -- cmd args...
+  [[ "${1:-}" == "--" ]] && shift || true
+  local tmp
+  tmp="$(mktemp -t willowcmd.XXXXXX)"
+
+  # Capturá TODO sin spamear el render
+  stdbuf -oL -eL "$@" 2>&1 | sanitize_stream > "$tmp"
+  local rc=${PIPESTATUS[0]}
+
+  tui_suspend
+  less -M "$tmp"
+  tui_resume
+
+  rm -f "$tmp"
+  return "$rc"
 }
 
 tui_pause() { # enter to continue
