@@ -263,7 +263,6 @@ install_aur_helper() {
   "
 }
 
-
 read_pkglist() {
     local pkgfile="$SCRIPT_DIR/pkglist.txt"
     packages=()
@@ -282,10 +281,10 @@ read_pkglist() {
 
 package_install() {
     read_pkglist
-    packages+=("$kernel" "$kernel"-headers "$microcode")
+    packages+=("$kernel" "$kernel"-headers "$microcode" mkinitcpio iptables-nft)
 
     info_print "Installing packages..."
-    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}"
+    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}" --noconfirm --needed
 }
 
 
