@@ -278,8 +278,6 @@ read_pkglist() {
         [[ -z "$line" || "$line" =~ ^# ]] && continue
         packages+=("$line")
     done < "$pkgfile"
-
-    info_print "Loaded ${#packages[@]} packages from $pkgfile"
 }
 
 package_install() {
