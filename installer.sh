@@ -284,7 +284,7 @@ package_install() {
     packages+=("$kernel" "$kernel"-headers "$microcode" mkinitcpio iptables-nft)
 
     info_print "Installing packages..."
-    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}" --noconfirm --needed
+    run_cmd RAW -- pacstrap -K /mnt "${packages[@]}" -- --noconfirm --needed
 }
 
 

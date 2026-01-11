@@ -15,7 +15,7 @@ _refresh(){ declare -F tui_refresh_throttled >/dev/null && tui_refresh_throttled
 _render(){ declare -F render_content >/dev/null && render_content || true; }
 
 sanitize_stream() {
-  tr -d '\r' | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'
+  tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'
 }
 
 run_cmd() { # run_cmd LEVEL -- cmd args...

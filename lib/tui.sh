@@ -181,8 +181,8 @@ compute_layout() {
   local content_h=$((PROG_R - margin))
   (( content_h < 8 )) && content_h=8
 
-  local right_w=$(( cols / 3 ))
-  (( right_w < 28 )) && right_w=28
+  local right_w=$(( cols / 4 ))
+  (( right_w < 24 )) && right_w=24
   local left_w=$(( cols - right_w - gap - 2*margin ))
   (( left_w < 30 )) && left_w=30
 
