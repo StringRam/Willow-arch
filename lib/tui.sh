@@ -106,7 +106,7 @@ declare -a LOG_LINES=()
 # Right panel: key/value state
 declare -A STATE=()
 
-PROG_TOTAL=8
+PROG_TOTAL=10
 PROG_STEP=0
 
 log_add() {  # log_add LEVEL "mensaje"

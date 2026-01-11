@@ -402,6 +402,7 @@ render_frame
 
 check_uefi
 check_clock_sync
+progress_set 1
 
 until keyboard_selector; do : ; done
 
@@ -412,6 +413,7 @@ until locale_selector; do : ; done
 until hostname_selector; do : ; done
 until set_usernpasswd; do : ; done
 until set_rootpasswd; do : ; done
+progress_set 2
 
 info_print "Wiping $disk."
 wipefs -af "$disk" &>/dev/null
@@ -422,9 +424,11 @@ format_partitions
 mount_partitions
 
 info_print "Device: $disk properly partitioned, formated and mounted."
+progress_set 3
 
 microcode_detector
 package_install
+progress_set 4
 
 echo "$hostname" > /mnt/etc/hostname
 
@@ -440,6 +444,7 @@ cat > /mnt/etc/hosts <<EOF
 ::1         localhost
 127.0.1.1   $hostname.localdomain   $hostname
 EOF
+progress_set 5
 
 virt_check
 
@@ -447,6 +452,7 @@ info_print "Configuring /etc/mkinitcpio.conf."
 cat > /mnt/etc/mkinitcpio.conf <<EOF
 HOOKS=(systemd autodetect microcode keyboard sd-vconsole modconf kms plymouth block sd-encrypt filesystems grub-btrfs-overlayfs)
 EOF
+progress_set 6
 
 info_print "Setting up grub config."
 UUID=$(blkid -s UUID -o value "$root_part")
@@ -483,6 +489,7 @@ arch-chroot /mnt /bin/bash -e <<EOF
     grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
 
 EOF
+progress_set 7
 
 info_print "Setting root password."
 echo "root:$rootpasswd" | arch-chroot /mnt chpasswd
@@ -494,6 +501,7 @@ if [[ -n "$username" ]]; then
     info_print "Setting user password for $username."
     echo "$username:$userpasswd" | arch-chroot /mnt chpasswd
 fi
+progress_set 8
 
 info_print "Configuring /boot backup when pacman transactions are made."
 mkdir /mnt/etc/pacman.d/hooks
@@ -524,9 +532,11 @@ services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scr
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
+progress_set 9
 
 until aur_helper_selector; do : ; done
 install_aur_helper
+progress_set 10
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
 info_print "Remember to unmount all partitions before rebooting."
