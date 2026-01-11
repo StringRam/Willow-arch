@@ -415,8 +415,9 @@ render_content() {
   # ── Left inner area ──
   local inner_r=$((LEFT_R + 2))
   local inner_c=$((LEFT_C + 2))
-  local inner_h=$((LEFT_H - 4))
+  local inner_h=$((LEFT_H - 5))
   local inner_w=$((LEFT_W - 4))
+
 
   local start=0
   local n=${#LOG_LINES[@]}
