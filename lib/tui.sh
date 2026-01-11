@@ -261,7 +261,7 @@ tui_readsecret() { # tui_readsecret varname "Prompt"
   echo  # importante: baja línea, pero estamos en alt-screen; igual ok
 
   printf -v "$__var" '%s' "$ans"
-  info_print "→ (secret) captured"
+  raw_print "→ (secret) captured"
 }
 
 tui_suspend() {
