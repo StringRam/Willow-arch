@@ -18,28 +18,27 @@ sanitize_stream() {
   tr -d '\r' | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'
 }
 
-run_cmd() { # run_cmd LEVEL "Label" -- cmd args...
-  local level="$1"; shift
-  local label="$1"; shift
+run_cmd() { # run_cmd LEVEL -- cmd args...
+  local level="${1:-RAW}"; shift || true
   [[ "${1:-}" == "--" ]] && shift || true
 
-  tui_refresh_throttled
+  _refresh
 
-  # stdbuf hace line-buffering para ver output en vivo
-  # si no existiera, podés quitar "stdbuf -oL -eL"
-  stdbuf -oL -eL "$@" 2>&1 | sanitize_stream | while IFS= read -r line; do
-    [[ -z "$line" ]] && continue
-    log_add "$level" "$line"
-    tui_refresh_throttled
+  # Si stdbuf no existe, ejecuta directo
+  local -a runner=()
+  if command -v stdbuf >/dev/null 2>&1; then
+    runner=(stdbuf -oL -eL)
+  fi
+
+  "${runner[@]}" "$@" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
+    # NO saltear líneas vacías: son parte del output
+    _log_add "$level" "$line"
+    _refresh
   done
 
   local rc=${PIPESTATUS[0]}
-  if (( rc == 0 )); then
-    info_print "✓ $label"
-  else
-    error_print "✗ $label (exit $rc)"
-  fi
-  render_content
+  _render
   return "$rc"
 }
+
 

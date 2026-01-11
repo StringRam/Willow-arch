@@ -315,7 +315,7 @@ keyboard_selector() {
             info_print "The standard US keyboard layout will be used."
             state_set "Keyboard Layout" "$kblayout"
             return 0;;
-        '/') localectl list-keymaps
+        '/') run_cmd RAW -- localectl list-keymaps
              clear
              return 1;;
         *) if ! localectl list-keymaps | grep -Fxq "$kblayout"; then
