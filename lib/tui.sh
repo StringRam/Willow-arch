@@ -21,8 +21,18 @@ term_cols() { tput cols; }
 term_lines() { tput lines; }
 
 #Traslada el tui a pantalla alternativa
-enter_alt() { tput smcup; }
-exit_alt()  { tput rmcup; }
+have_tty() { [[ -t 0 && -t 1 ]]; }
+
+enter_alt() {
+  have_tty || return 0
+  tput smcup >/dev/null 2>&1 || return 0
+}
+
+exit_alt() {
+  have_tty || return 0
+  tput rmcup >/dev/null 2>&1 || return 0
+}
+
 
 
 # ───────────────────────── Drawing primitives ─────────────────────────
