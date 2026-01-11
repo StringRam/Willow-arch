@@ -384,6 +384,8 @@ set_rootpasswd() {
 #                      Main installation process
 #└──────────────────────────────  ──────────────────────────────┘
 
+clear
+
 enter_alt
 render_splash
 render_frame
