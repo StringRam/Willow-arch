@@ -276,7 +276,7 @@ package_install() {
     read_pkglist
     packages+=("$kernel" "$kernel"-headers "$microcode")
 
-    info_print "Installing packages: ${packages[*]}"
+    info_print "Installing packages..."
     pacstrap -K /mnt "${packages[@]}" &>/dev/null
 }
 
