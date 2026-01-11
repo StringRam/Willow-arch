@@ -290,7 +290,7 @@ fstab_file() {
 }
 
 locale_selector() {
-    tui_readline locale "Please insert the locale you use (format: xx_XX. Enter empty to use en_US, or \"/\" to search locales): "
+    tui_readline locale "Please insert a locale (Empty to use en_US, \"/\" to search locales): "
     case "$locale" in
         '') locale="en_US.UTF-8"
             info_print "$locale will be the default locale."
