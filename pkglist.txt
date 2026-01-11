@@ -2,8 +2,9 @@
 #                           (Base System)
 #└──────────────────────────────  ──────────────────────────────┘
 base
-base-devel
 linux-firmware
+iptables-nft
+mkinitcpio
 man-db
 man-pages
 texinfo
@@ -12,6 +13,7 @@ texinfo
 #┌──────────────────────────────  ──────────────────────────────┐
 #                            (Utilities)
 #└──────────────────────────────  ──────────────────────────────┘
+base-devel
 git
 brightnessctl
 dosfstools
