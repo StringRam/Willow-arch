@@ -228,9 +228,9 @@ microcode_detector() {
 detect_gpu_vendor() {
   local v
   v="$(lspci -nn | grep -Ei 'VGA|3D|Display' || true)"
-  if   grep -qi 'Intel'  <<<"$v"; then gpuvendor = intel
-  elif grep -Eqi 'AMD|ATI' <<<"$v"; then gpuvendor = amd
-  elif grep -qi 'NVIDIA' <<<"$v"; then gpuvendor = nvidia
+  if   grep -qi 'Intel'  <<<"$v"; then gpuvendor=intel
+  elif grep -Eqi 'AMD|ATI' <<<"$v"; then gpuvendor=amd
+  elif grep -qi 'NVIDIA' <<<"$v"; then gpuvendor=nvidia
   else gpuvendor = unknown
   fi
 }
@@ -293,7 +293,7 @@ package_install() {
     read_pkglist
     packages+=("$kernel" "$kernel"-headers "$microcode" mkinitcpio iptables-nft)
     if [[ $gpuvendor == "intel" ]] then packages+=(intel-media-driver)
-
+    fi
     info_print "Installing packages..."
     run_cmd RAW -- pacstrap -K /mnt "${packages[@]}"
 }
