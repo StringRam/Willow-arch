@@ -399,7 +399,7 @@ set_rootpasswd() {
 
 setup_zram() {
   # zram-generator: no hay que "enablear" un service; systemd genera el .swap al boot
-  install -d /mnt/etc/systemd
+  install -d /mnt/etc/systemd &>/dev/null
 
   cat > /mnt/etc/systemd/zram-generator.conf <<'EOF'
 [zram0]
