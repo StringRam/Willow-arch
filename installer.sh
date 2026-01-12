@@ -505,7 +505,7 @@ cat > /mnt/etc/hosts <<EOF
 EOF
 progress_set 5
 
-virt_check
+#virt_check
 setup_zram
 progress_set 6
 
