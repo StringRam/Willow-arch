@@ -25,6 +25,7 @@ rsync
 snapper
 snap-pac
 grub-btrfs
+zram-generator
 
 
 #┌──────────────────────────────  ──────────────────────────────┐

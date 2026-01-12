@@ -225,6 +225,16 @@ microcode_detector() {
     fi
 }
 
+detect_gpu_vendor() {
+  local v
+  v="$(lspci -nn | grep -Ei 'VGA|3D|Display' || true)"
+  if   grep -qi 'Intel'  <<<"$v"; then gpuvendor = intel
+  elif grep -Eqi 'AMD|ATI' <<<"$v"; then gpuvendor = amd
+  elif grep -qi 'NVIDIA' <<<"$v"; then gpuvendor = nvidia
+  else gpuvendor = unknown
+  fi
+}
+
 aur_helper_selector() {
     info_print "AUR helpers are used to install packages from the Arch User Repository (AUR)."
     tui_readline aur_helper "Choose an AUR helper to install (yay/paru, leave empty to skip): "
@@ -282,6 +292,7 @@ read_pkglist() {
 package_install() {
     read_pkglist
     packages+=("$kernel" "$kernel"-headers "$microcode" mkinitcpio iptables-nft)
+    if [[ $gpuvendor == "intel" ]] then packages+=(intel-media-driver)
 
     info_print "Installing packages..."
     run_cmd RAW -- pacstrap -K /mnt "${packages[@]}"
@@ -386,6 +397,56 @@ set_rootpasswd() {
     return 0
 }
 
+setup_zram() {
+  # zram-generator: no hay que "enablear" un service; systemd genera el .swap al boot
+  install -d /mnt/etc/systemd
+
+  cat > /mnt/etc/systemd/zram-generator.conf <<'EOF'
+[zram0]
+# Solo activar en sistemas con menos de 8G de RAM
+host-memory-limit = 8G
+
+# Swap en zram
+zram-size = min(ram / 2, 4096)
+compression-algorithm = zstd
+swap-priority = 100
+EOF
+}
+
+grub_installation() {
+    info_print "Setting up grub config."
+    UUID=$(blkid -s UUID -o value "$root_part")
+    sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
+
+    info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
+    arch-chroot /mnt /bin/bash -e <<EOF
+
+    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime &>/dev/null
+
+    hwclock --systohc
+
+    locale-gen &>/dev/null
+
+    # Generating a new initramfs.
+    mkinitcpio -P &>/dev/null
+
+    # Snapper configuration.
+    umount /.snapshots
+    rm -r /.snapshots
+    snapper --no-dbus -c root create-config /
+    btrfs subvolume delete /.snapshots &>/dev/null
+    mkdir /.snapshots
+    mount -a &>/dev/null
+    chmod 750 /.snapshots
+
+    # Installing GRUB.
+    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB &>/dev/null
+
+    # Creating grub config file.
+    grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
+
+EOF
+}
 
 #┌──────────────────────────────  ──────────────────────────────┐
 #                      Main installation process
@@ -424,6 +485,7 @@ info_print "Device: $disk properly partitioned, formated and mounted."
 progress_set 3
 
 microcode_detector
+detect_gpu_vendor
 package_install
 progress_set 4
 
@@ -444,48 +506,14 @@ EOF
 progress_set 5
 
 virt_check
+setup_zram
+progress_set 6
 
 info_print "Configuring /etc/mkinitcpio.conf."
 cat > /mnt/etc/mkinitcpio.conf <<EOF
 HOOKS=(systemd autodetect microcode keyboard sd-vconsole modconf kms plymouth block sd-encrypt filesystems grub-btrfs-overlayfs)
 EOF
-progress_set 6
-
-info_print "Setting up grub config."
-UUID=$(blkid -s UUID -o value "$root_part")
-sed -i "\,^GRUB_CMDLINE_LINUX=\"\",s,\",&rd.luks.name=$UUID=cryptroot root=$BTRFS," /mnt/etc/default/grub
-
-info_print "Configuring the system (timezone, system clock, initramfs, Snapper, GRUB)."
-arch-chroot /mnt /bin/bash -e <<EOF
-
-    # Setting up timezone.
-    ln -sf /usr/share/zoneinfo/$(curl -s http://ip-api.com/line?fields=timezone) /etc/localtime &>/dev/null
-
-    # Setting up clock.
-    hwclock --systohc
-
-    # Generating locales.
-    locale-gen &>/dev/null
-
-    # Generating a new initramfs.
-    mkinitcpio -P &>/dev/null
-
-    # Snapper configuration.
-    umount /.snapshots
-    rm -r /.snapshots
-    snapper --no-dbus -c root create-config /
-    btrfs subvolume delete /.snapshots &>/dev/null
-    mkdir /.snapshots
-    mount -a &>/dev/null
-    chmod 750 /.snapshots
-
-    # Installing GRUB.
-    grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB &>/dev/null
-
-    # Creating grub config file.
-    grub-mkconfig -o /boot/grub/grub.cfg &>/dev/null
-
-EOF
+grub_installation
 progress_set 7
 
 info_print "Setting root password."
