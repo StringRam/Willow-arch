@@ -20,19 +20,38 @@ move() { tput cup "$1" "$2"; }           # row col
 term_cols() { tput cols; }
 term_lines() { tput lines; }
 
+# Guarda/restaura nivel printk (kernel -> consola)
+PRINTK_OLD=""
+
+silence_tty_noise() {
+  [[ -w /proc/sys/kernel/printk ]] || return 0
+  [[ -z "${PRINTK_OLD:-}" ]] && PRINTK_OLD="$(< /proc/sys/kernel/printk 2>/dev/null || true)"
+  echo 0 > /proc/sys/kernel/printk 2>/dev/null || true
+}
+
+restore_tty_noise() {
+  [[ -w /proc/sys/kernel/printk ]] || return 0
+  if [[ -n "${PRINTK_OLD:-}" ]]; then
+    printf '%s\n' "$PRINTK_OLD" > /proc/sys/kernel/printk 2>/dev/null || true
+  else
+    echo 4 > /proc/sys/kernel/printk 2>/dev/null || true
+  fi
+}
+
 #Traslada el tui a pantalla alternativa
 have_tty() { [[ -t 0 && -t 1 ]]; }
 
 enter_alt() {
   have_tty || return 0
+  silence_tty_noise
   tput smcup >/dev/null 2>&1 || return 0
 }
 
 exit_alt() {
   have_tty || return 0
   tput rmcup >/dev/null 2>&1 || return 0
+  restore_tty_noise
 }
-
 
 
 # ───────────────────────── Drawing primitives ─────────────────────────
@@ -501,6 +520,7 @@ render_content() {
 }
 
 cleanup() {
+  restore_tty_noise
   show_cursor
   esc "0m"
   exit_alt 2>/dev/null || true
