@@ -247,7 +247,7 @@ aur_helper_selector() {
 install_aur_helper() {
   [[ -z "${aur_helper:-}" || -z "${username:-}" ]] && return 0
 
-  arch-chroot /mnt /usr/bin/runuser -u "$username" -- bash -lc "
+  run_cmd -- arch-chroot /mnt /usr/bin/runuser -u "$username" -- bash -lc "
     set -euo pipefail
     cd ~
     rm -rf '$aur_helper' || true
@@ -256,7 +256,7 @@ install_aur_helper() {
     makepkg -s --noconfirm --needed
   "
 
-  arch-chroot /mnt bash -lc "
+  run_cmd -- arch-chroot /mnt bash -lc "
     set -euo pipefail
     cd '/home/$username/$aur_helper'
     pacman -U --noconfirm --needed ./*.pkg.tar.*
