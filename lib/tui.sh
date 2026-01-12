@@ -164,7 +164,7 @@ log_prefix() { # log_prefix LEVEL -> imprime prefijo ya coloreado
     INFO) printf "%s[ o ]%s " "${BOLD}${GREEN}" "${RESET}" ;;
     ASK)  printf "%s[ ? ]%s " "${BOLD}${YELLOW}" "${RESET}" ;;
     ERR)  printf "%s[ x ]%s " "${BOLD}${RED}" "${RESET}" ;;
-    *)    printf "%s     %s " "${BOLD}${CYAN}" "${RESET}" ;;
+    *)    printf "      " ;;
   esac
 }
 
@@ -409,22 +409,18 @@ render_log_line() { # row col width "LEVEL|msg"
   local level="${entry%%|*}"
   local msg="${entry#*|}"
 
-  # ancho visible fijo del prefijo: "[ i ] " = 6
+  msg="${msg//$'\t'/    }"
+
   local prefix_visible=6
   local msg_w=$(( w - prefix_visible ))
   (( msg_w < 0 )) && msg_w=0
 
-  msg="${msg:0:$msg_w}"
-
   move "$r" "$c"
   log_prefix "$level"
-  printf "%s" "$msg"
 
-  # padding para limpiar solo dentro del panel
-  local pad=$(( w - prefix_visible - ${#msg} ))
-  (( pad < 0 )) && pad=0
-  printf "%*s" "$pad" ""
+  printf "%-*.*s" "$msg_w" "$msg_w" "$msg"
 }
+
 
 render_state_line() { # row col width key value
   local r="$1" c="$2" w="$3" key="$4" val="$5"

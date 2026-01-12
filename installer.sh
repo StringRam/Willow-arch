@@ -245,22 +245,13 @@ aur_helper_selector() {
 }
 
 install_aur_helper() {
-  [[ -z "${aur_helper:-}" || -z "${username:-}" ]] && return 0
-
-  run_cmd -- arch-chroot /mnt /usr/bin/runuser -u "$username" -- bash -lc "
-    set -euo pipefail
-    cd ~
-    rm -rf '$aur_helper' || true
-    git clone 'https://aur.archlinux.org/$aur_helper.git'
-    cd '$aur_helper'
-    makepkg -s --noconfirm --needed
-  "
-
-  run_cmd -- arch-chroot /mnt bash -lc "
-    set -euo pipefail
-    cd '/home/$username/$aur_helper'
-    pacman -U --noconfirm --needed ./*.pkg.tar.*
-  "
+  [[ -z "$aur_helper" || -z "$username" ]] && return
+    run_cmd -- arch-chroot /mnt /bin/bash <<EOF
+sudo -u "$username" bash -c 'cd ~
+git clone https://aur.archlinux.org/$aur_helper.git && cd "$aur_helper"
+makepkg -si --noconfirm'
+EOF
+    info_print "AUR helper $aur_helper has been installed for user $username."
 }
 
 read_pkglist() {
