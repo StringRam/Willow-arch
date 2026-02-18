@@ -404,7 +404,7 @@ setup_zram() {
   cat > /mnt/etc/systemd/zram-generator.conf <<'EOF'
 [zram0]
 # Solo activar en sistemas con menos de 8G de RAM
-host-memory-limit = 8G
+host-memory-limit = 8192
 
 # Swap en zram
 zram-size = min(ram / 2, 4096)
