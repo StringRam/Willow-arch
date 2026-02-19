@@ -407,8 +407,8 @@ setup_zram() {
 host-memory-limit = 8192
 
 # Swap en zram
-zram-size = min(ram / 2, 4096)
-compression-algorithm = zstd
+zram-size = ram * 1.0
+compression-algorithm = lzo-rle
 swap-priority = 100
 EOF
 }
@@ -562,7 +562,7 @@ sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
 arch-chroot /mnt pacman -Sy --noconfirm &>/dev/null
 
 info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
-services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service)
+services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service systemd-oomd.service)
 for service in "${services[@]}"; do
     systemctl enable "$service" --root=/mnt &>/dev/null
 done
