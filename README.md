@@ -11,22 +11,9 @@ It is currently a personal, opinionated installation flow with an interactive te
 
 > ⚠️ This script partitions and formats disks. Read the code before running it.
 
----
-
-## Current Status
-
-**Stage:** experimental / personal-use installer
-
-The script works as an automated base installer, but it is still being developed and audited. Some parts are intentionally opinionated and not yet fully configurable.
-
 Known limitations:
-
-- The installer is currently a single large orchestration script.
-- Disk partition paths are derived from partition labels.
-- Timezone is detected automatically through an external web request.
 - There is no dry-run mode yet.
 - There is no persistent install log yet.
-- The TUI exists, but the installer flow still needs cleanup and modularization.
 
 ---
 
