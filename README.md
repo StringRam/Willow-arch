@@ -4,6 +4,8 @@
 
 # 🌿 Willow-Arch
 
+<img width="1394" height="455" alt="image" src="https://github.com/user-attachments/assets/5aeefd39-7bf4-4f7a-9d78-b6c9a416bb29" />
+
 Willow-Arch is a personal Arch Linux installation script designed to create the base system used by my Hyprland + Quickshell desktop environment.
 
 It is not a general-purpose Arch installer yet.  
