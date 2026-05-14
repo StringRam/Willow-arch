@@ -10,6 +10,7 @@ It is not a general-purpose Arch installer yet.
 It is currently a personal, opinionated installation flow with an interactive terminal UI, full-disk encryption, Btrfs subvolumes, Snapper, GRUB, and a small set of base packages.
 
 > ⚠️ This script partitions and formats disks. Read the code before running it.
+> ⚠️ **Make sure you're running from a live Arch Linux environment with internet access.**
 
 Known limitations:
 - There is no dry-run mode yet.
@@ -35,7 +36,49 @@ Willow-Arch sets up a minimal Arch system with:
 - zram
 - Optional AUR helper installation
 
+> Please check the [arch wiki](https://wiki.archlinux.org) out for more info.
+
 The installed package set is defined in:
 
 ```txt
 pkglist.txt
+```
+
+## 🗂️ Btrfs Subvolume Layout
+
+```plaintext
+/
+├── @               → /
+├── @home           → /home
+├── @var_log        → /var/log
+├── @srv            → /srv
+├── @snapshots      → /.snapshots
+└── @swap           → /swap
+```
+
+## Usage
+
+### 1. Clone the Repository
+```
+git clone https://github.com/StringRam/Willow-arch.git
+cd Willow-arch
+```
+### 2.Make the script executable
+```
+chmod +x WillowArch.sh
+```
+### 3.Run the script
+```
+./WillowArch.sh
+```
+## Contributions
+
+Contributions, suggestions, and constructive feedback are welcome.  
+Feel free to open an issue or pull request.
+
+## 📜 License
+
+MIT License  
+© 2025 Mateo Correa Franco
+
+> Inspired by [classy-giraffe](https://github.com/classy-giraffe)
