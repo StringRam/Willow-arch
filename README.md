@@ -2,97 +2,53 @@
 ![📄 License](https://img.shields.io/github/license/StringRam/Willow-arch?label=📄%20License)
 ![⭐ Stars](https://img.shields.io/github/stars/StringRam/Willow-arch?label=⭐%20Stars)
 
-
 # 🌿 Willow-Arch
 
-*A flexible and simple Arch Linux installation script. Made for personal and public use.*
+Willow-Arch is a personal Arch Linux installation script designed to create the base system used by my Hyprland + Quickshell desktop environment.
 
+It is not a general-purpose Arch installer yet.  
+It is currently a personal, opinionated installation flow with an interactive terminal UI, full-disk encryption, Btrfs subvolumes, Snapper, GRUB, and a small set of base packages.
 
-## Features
+> ⚠️ This script partitions and formats disks. Read the code before running it.
 
-### Automated Setup
-- Verifies UEFI boot  
-- Enables NTP and syncs system clock  
-- Detects CPU microcode (Intel/AMD)  
-- Supports kernel selection: `linux`, `lts`, `zen`, or `hardened`
+---
 
-### Disk Layout & Encryption
-- Full disk encryption with LUKS  
-- GPT partitioning scheme  
-- Btrfs filesystem with subvolumes:
-  - `@` for root
-  - `@home` for user files
-  - `@var_log` for logs
-  - `@snapshots` for Snapper
-  - `@swap` for swapfile
+## Current Status
 
-### Modular Package Installation
-- Installs base system  
-- Installs additional packages from `pkglist.txt`  
-- Fully configurable using plain text
+**Stage:** experimental / personal-use installer
 
-### Post-Install Automation
-- Configures locale, timezone, hostname, and user  
-- Installs and configures GRUB for encrypted boot  
-- Enables systemd services:
-  - `snapper`
-  - `reflector`
-  - `btrfs scrub`
-  - `grub-btrfs`
+The script works as an automated base installer, but it is still being developed and audited. Some parts are intentionally opinionated and not yet fully configurable.
 
-### UX & Output
-- Color-coded output  
-- Clear section titles and separators
+Known limitations:
 
+- The installer is currently a single large orchestration script.
+- Disk partition paths are derived from partition labels.
+- Timezone is detected automatically through an external web request.
+- There is no dry-run mode yet.
+- There is no persistent install log yet.
+- The TUI exists, but the installer flow still needs cleanup and modularization.
 
-## 🗂️ Btrfs Subvolume Layout
+---
 
-```plaintext
-/
-├── @               → /
-├── @home           → /home
-├── @var_log        → /var/log
-├── @srv            → /srv
-├── @snapshots      → /.snapshots
-└── @swap           → /swap
-```
+## What It Installs
 
-## Usage
+Willow-Arch sets up a minimal Arch system with:
 
-### 1. Clone the Repository
-```
-git clone https://github.com/StringRam/Willow-arch.git
-cd Willow-arch
-```
-### 2.Make the script executable
-```
-chmod +x WillowArch.sh
-```
-### 3.Run the script
-```
-./WillowArch.sh
-```
-You'll be guided through:
+- UEFI boot
+- GPT partitioning
+- LUKS encryption
+- Btrfs filesystem
+- Btrfs subvolumes
+- Optional swapfile
+- Snapper snapshots
+- GRUB encrypted boot
+- Reflector
+- NetworkManager
+- Bluetooth
+- zram
+- Optional AUR helper installation
 
-- Disk selection and formatting  
-- Full-disk encryption  
-- Kernel and package selection  
-- Localization and user setup
+The installed package set is defined in:
 
-Please check the [arch wiki](https://wiki.archlinux.org) out for more info.
-
-> ⚠️ **Make sure you're running from a live Arch Linux environment with internet access.**
-
-
-## Contributions
-
-Contributions, suggestions, and constructive feedback are welcome.  
-Feel free to open an issue or pull request.
-
-
-## 📜 License
-
-MIT License  
-© 2025 Mateo Correa Franco
-
-> Inspired by [classy-giraffe](https://github.com/classy-giraffe)
+```txt
+pkglist.txt
