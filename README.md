@@ -10,11 +10,11 @@ It is not a general-purpose Arch installer yet.
 It is currently a personal, opinionated installation flow with an interactive terminal UI, full-disk encryption, Btrfs subvolumes, Snapper, GRUB, and a small set of base packages.
 
 > ⚠️ This script partitions and formats disks. Read the code before running it.
-> ⚠️ **Make sure you're running from a live Arch Linux environment with internet access.**
 
 Known limitations:
 - There is no dry-run mode yet.
 - There is no persistent install log yet.
+- The TUI exists, but the installer flow still needs cleanup and modularization.
 
 ---
 
@@ -36,49 +36,153 @@ Willow-Arch sets up a minimal Arch system with:
 - zram
 - Optional AUR helper installation
 
-> Please check the [arch wiki](https://wiki.archlinux.org) out for more info.
-
 The installed package set is defined in:
-
 ```txt
 pkglist.txt
 ```
 
-## 🗂️ Btrfs Subvolume Layout
+---
 
-```plaintext
-/
-├── @               → /
-├── @home           → /home
-├── @var_log        → /var/log
-├── @srv            → /srv
-├── @snapshots      → /.snapshots
-└── @swap           → /swap
+## Repository Structure
+
+```txt
+Willow-arch/
+├── installer.sh
+├── config/
+│   ├── defaults.conf
+│   └── packages/
+├── lib/
+│   ├── checks.sh
+│   ├── disk.sh
+│   ├── luks.sh
+│   ├── btrfs.sh
+│   ├── packages.sh
+│   ├── bootloader.sh
+│   ├── system.sh
+│   ├── run.sh
+│   └── tui.sh
+└── README.md
 ```
 
+---
+
+## Btrfs Layout
+
+The installer creates a LUKS container and formats it as Btrfs.
+
+Current subvolume layout:
+```txt
+/
+├── @            -> /
+├── @home        -> /home
+├── @root        -> /root
+├── @srv         -> /srv
+├── @var_log     -> /var/log
+├── @snapshots   -> /.snapshots
+└── @swap        -> /.swap        # only when swap is enabled
+```
+
+Mount options currently used:
+```txt
+ssd,noatime,compress-force=zstd:3,discard=async
+```
+
+---
+
+## Main Features
+### Installation Flow
+
+The script currently handles:
+- UEFI check
+- System clock sync check
+- Keyboard layout selection
+- Disk selection
+- LUKS password setup
+- Kernel selection
+- Locale selection
+- Hostname setup
+- User and root password setup
+- Disk wipe and partitioning
+- Btrfs subvolume creation
+- Base package installation
+- fstab generation
+- mkinitcpio configuration
+- GRUB installation
+- Snapper configuration
+- Pacman configuration
+- System service enablement
+- AUR helper selection and installation
+### Kernel Selection
+
+The installer supports selecting one of:
+```txt
+linux
+linux-lts
+linux-zen
+linux-hardened
+```
+### CPU Microcode
+
+The installer attempts to detect CPU vendor and install the matching microcode package:
+```txt
+intel-ucode
+amd-ucode
+```
+### Services Enabled
+
+The script currently enables services/timers such as:
+```txt
+NetworkManager.service
+bluetooth.service
+reflector.timer
+snapper-timeline.timer
+snapper-cleanup.timer
+grub-btrfsd.service
+systemd-oomd.service
+btrfs scrub timers
+```
+
+---
 ## Usage
 
-### 1. Clone the Repository
-```
+Boot into an Arch Linux live environment with internet access.
+
+Clone the repository:
+```sh
 git clone https://github.com/StringRam/Willow-arch.git
 cd Willow-arch
 ```
-### 2.Make the script executable
-```
-chmod +x WillowArch.sh
-```
-### 3.Run the script
-```
-./WillowArch.sh
-```
-## Contributions
 
-Contributions, suggestions, and constructive feedback are welcome.  
-Feel free to open an issue or pull request.
+Make the installer executable:
+```sh
+chmod +x installer.sh
+```
 
+Run the installer:
+```sh
+./installer.sh
+```
+
+---
+## ⚠️ Important Warning
+
+Before running it, make sure that:
+- You are in an Arch Linux live ISO.
+- You have internet access.
+- You have backed up important data.
+- You understand what the script does.
+- You are comfortable recovering/chrooting manually if something fails.
+
+---
+## Contributing
+
+Suggestions, audits, and constructive criticism are welcome.
+This project is still highly personal and experimental, so not every contribution will fit the intended direction.
+
+---
 ## 📜 License
 
 MIT License  
 © 2025 Mateo Correa Franco
 
-> Inspired by [classy-giraffe](https://github.com/classy-giraffe)
+Inspired by [classy-giraffe](https://github.com/classy-giraffe).
