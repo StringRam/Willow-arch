@@ -40,7 +40,7 @@ Willow-Arch sets up a minimal Arch system with:
 
 The installed package set is defined in:
 ```txt
-pkglist.txt
+config/packages/base.txt
 ```
 
 ---
@@ -53,6 +53,7 @@ Willow-arch/
 ├── config/
 │   ├── defaults.conf
 │   └── packages/
+│       └── base.txt
 ├── lib/
 │   ├── checks.sh
 │   ├── disk.sh
