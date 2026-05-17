@@ -139,8 +139,6 @@ progress_set 10
 
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
 info_print "Remember to unmount all partitions before rebooting."
-
-exit_alt
 }
 
 main "$@"

@@ -515,7 +515,7 @@ render_content() {
   printf "%s/%s" "$PROG_STEP" "$PROG_TOTAL"
 }
 
-cleanup() {
+tui_cleanup() {
   restore_tty_noise
   show_cursor
   esc "0m"
@@ -523,9 +523,15 @@ cleanup() {
   clear
 }
 
-# Para que el trap ERR se herede en funciones y subshells
-set -o errtrace
+tui_error_pause() {
+  local exit_code=$?
 
-trap cleanup EXIT INT TERM
+  show_cursor
+  esc "0m"
+  echo
+  echo "[ERR] line $1: $2"
+  echo "status=$exit_code"
+  read -n1 -r -s -p "Press a key..." || true
 
-trap 'show_cursor; esc "0m"; echo; echo "[ERR] line $LINENO: $BASH_COMMAND"; echo "status=$?"; read -n1 -r -s -p "Press a key..." || true' ERR
+  return "$exit_code"
+}
