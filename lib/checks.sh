@@ -4,6 +4,7 @@
 
 check_uefi() {
     if [[ -f /sys/firmware/efi/fw_platform_size ]]; then
+        local fw_size
         fw_size=$(cat /sys/firmware/efi/fw_platform_size)
         if [[ "$fw_size" == "64" || "$fw_size" == "32" ]]; then
             info_print "UEFI mode detected: $fw_size-bit"
@@ -19,6 +20,7 @@ check_uefi() {
 
 check_clock_sync() {
     info_print "Checking system clock synchronization..."
+    local sync_status
     sync_status=$(timedatectl show -p NTPSynchronized --value)
 
     if [[ "$sync_status" == "yes" ]]; then
@@ -39,6 +41,7 @@ check_clock_sync() {
 }
 
 virt_check() {
+    local hypervisor
     hypervisor=$(systemd-detect-virt)
     case $hypervisor in
         kvm )   info_print "KVM has been detected, setting up guest tools."

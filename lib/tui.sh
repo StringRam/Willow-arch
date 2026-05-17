@@ -66,8 +66,10 @@ draw_box() {
   local bot="└$(repeat_char "$((w-2))" "─")┘"
 
   move "$r" "$c"; printf "%s" "$top"
-  for i in $(seq 1 $((h-2))); do
-    move $((r+i)) "$c"; printf "%s" "$mid"
+  local i
+  for ((i = 1; i <= h - 2; i++)); do
+    move $((r+i)) "$c"
+    printf "%s" "$mid"
   done
   move $((r+h-1)) "$c"; printf "%s" "$bot"
 
@@ -296,12 +298,14 @@ tui_resume() {
 
 tui_pager_cmd() { # tui_pager_cmd -- cmd args...
   [[ "${1:-}" == "--" ]] && shift || true
-  local tmp
+
+  local tmp rc
   tmp="$(mktemp -t willowcmd.XXXXXX)"
 
-  # Capturá TODO sin spamear el render
+  set +e
   stdbuf -oL -eL "$@" 2>&1 | sanitize_stream > "$tmp"
-  local rc=${PIPESTATUS[0]}
+  rc=${PIPESTATUS[0]}
+  set -e
 
   tui_suspend
   less -M "$tmp"
@@ -460,10 +464,8 @@ render_content() {
   local row="$inner_r"
   for ((i=0; i<inner_h; i++)); do
     local idx=$((start + i))
-    local text=""
-    if (( idx < n )); then text="${LOG_LINES[$idx]}"; fi
-    local entry=""
-    if (( idx < n )); then entry="${LOG_LINES[$idx]}"; else entry="|"; fi
+    local entry="|"
+    (( idx < n )) && entry="${LOG_LINES[$idx]}"
     render_log_line "$row" "$inner_c" "$inner_w" "$entry"
     ((++row))
   done
