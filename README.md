@@ -16,7 +16,6 @@ It is currently a personal, opinionated installation flow with an interactive te
 Known limitations:
 - There is no dry-run mode yet.
 - There is no persistent install log yet.
-- The TUI exists, but the installer flow still needs cleanup and modularization.
 
 ---
 
