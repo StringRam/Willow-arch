@@ -14,8 +14,8 @@ locale_selector() {
             info_print "$locale will be the default locale."
             state_set "Locale" "$locale"
             return 0;;
-        '/') tui_pager_cmd -- sed -E '/^# +|^#$/d;s/^#| *$//g;s/ .*/ (Charset:&)/' /etc/locale.gen | less -M
-                return 1;;
+        '/') tui_pager_cmd -- sed -E '/^# +|^#$/d;s/^#| *$//g;s/ .*/ (Charset:&)/' /etc/locale.gen
+            return 1;;
         *)  if ! grep -q "^#\?$(sed 's/[].*[]/\\&/g' <<< "$locale") " /etc/locale.gen; then
                 error_print "The specified locale doesn't exist or isn't supported."
                 return 1

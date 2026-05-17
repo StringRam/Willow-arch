@@ -38,7 +38,7 @@ check_clock_sync() {
     fi
 }
 
-virt_check () {
+virt_check() {
     hypervisor=$(systemd-detect-virt)
     case $hypervisor in
         kvm )   info_print "KVM has been detected, setting up guest tools."

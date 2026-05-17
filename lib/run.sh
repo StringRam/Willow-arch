@@ -19,24 +19,25 @@ sanitize_stream() {
 }
 
 run_cmd() { # run_cmd LEVEL -- cmd args...
-  local level="${1:-RAW}"; shift || true
+  local level="${1:-RAW}"
+  shift || true
   [[ "${1:-}" == "--" ]] && shift || true
 
   _refresh
 
-  # Si stdbuf no existe, ejecuta directo
   local -a runner=()
   if command -v stdbuf >/dev/null 2>&1; then
     runner=(stdbuf -oL -eL)
   fi
 
+  set +e
   "${runner[@]}" "$@" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
-    # NO saltear líneas vacías: son parte del output
     _log_add "$level" "$line"
     _refresh
   done
-
   local rc=${PIPESTATUS[0]}
+  set -e
+
   _render
   return "$rc"
 }

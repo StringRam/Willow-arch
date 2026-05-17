@@ -61,9 +61,9 @@ draw_box() {
   (( h >= 3 )) || return 0
   (( w >= 4 )) || return 0
 
-  local top="┌$(printf '─%.0s' $(seq 1 $((w-2))))┐"
-  local mid="│$(printf ' %.0s' $(seq 1 $((w-2))))│"
-  local bot="└$(printf '─%.0s' $(seq 1 $((w-2))))┘"
+  local top="┌$(repeat_char "$((w-2))" "─")┐"
+  local mid="│$(repeat_char "$((w-2))" " ")│"
+  local bot="└$(repeat_char "$((w-2))" "─")┘"
 
   move "$r" "$c"; printf "%s" "$top"
   for i in $(seq 1 $((h-2))); do
@@ -516,20 +516,20 @@ render_content() {
 }
 
 tui_cleanup() {
-  restore_tty_noise
   show_cursor
   esc "0m"
   exit_alt 2>/dev/null || true
-  clear
 }
 
 tui_error_pause() {
-  local exit_code=$?
+  local exit_code="${1:-unknown}"
+  local line_no="${2:-unknown}"
+  local command="${3:-unknown}"
 
   show_cursor
   esc "0m"
   echo
-  echo "[ERR] line $1: $2"
+  echo "[ERR] line $line_no: $command"
   echo "status=$exit_code"
   read -n1 -r -s -p "Press a key..." || true
 
