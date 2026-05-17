@@ -2,11 +2,6 @@
 
 # Willow Archlinux installation script for personal use.
 #
-# The installer entrypoint intentionally stays small: it loads configuration,
-# imports the implementation modules, and runs the installation flow. The
-# operational steps are kept in lib/*.sh so they can be audited and evolved
-# independently without changing the default behavior.
-#
 # Credits to classy-giraffe for his script.
 # MIT License Copyright (c) 2025 Mateo Correa Franco
 
@@ -18,6 +13,7 @@ SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 [[ -r "$SCRIPT_DIR/config/defaults.conf" ]] && source "$SCRIPT_DIR/config/defaults.conf"
 
 source "$SCRIPT_DIR/lib/tui.sh"
+source "$SCRIPT_DIR/lib/cleanup.sh"
 source "$SCRIPT_DIR/lib/run.sh"
 source "$SCRIPT_DIR/lib/checks.sh"
 source "$SCRIPT_DIR/lib/disk.sh"
@@ -26,6 +22,8 @@ source "$SCRIPT_DIR/lib/btrfs.sh"
 source "$SCRIPT_DIR/lib/packages.sh"
 source "$SCRIPT_DIR/lib/system.sh"
 source "$SCRIPT_DIR/lib/bootloader.sh"
+
+register_cleanup_trap
 
 main() {
 clear
