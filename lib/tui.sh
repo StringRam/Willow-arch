@@ -521,6 +521,7 @@ tui_cleanup() {
   show_cursor
   esc "0m"
   exit_alt 2>/dev/null || true
+  clear
 }
 
 tui_error_pause() {
