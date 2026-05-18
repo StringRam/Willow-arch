@@ -4,7 +4,7 @@
 
 fstab_file() {
     info_print "Generating fstab file..."
-    genfstab -U /mnt >> /mnt/etc/fstab
+    run_quiet SYS -- bash -c 'genfstab -U /mnt >> /mnt/etc/fstab'
 }
 
 locale_selector() {
@@ -39,7 +39,7 @@ keyboard_selector() {
                return 1
            fi
         info_print "Changing console layout to $kblayout."
-        loadkeys "$kblayout"
+        run_quiet SYS -- loadkeys "$kblayout"
         state_set "Keyboard Layout" "$kblayout"
         return 0
     esac
@@ -95,7 +95,7 @@ set_rootpasswd() {
 
 setup_zram() {
   # zram-generator: no hay que "enablear" un service; systemd genera el .swap al boot
-  install -d /mnt/etc/systemd &>/dev/null
+  run_quiet SYS -- install -d /mnt/etc/systemd
 
   cat > /mnt/etc/systemd/zram-generator.conf <<'EOF'
 [zram0]

@@ -18,62 +18,82 @@ sanitize_stream() {
   tr '\r' '\n' | sed -r 's/\x1B\[[0-9;]*[A-Za-z]//g'
 }
 
-run_cmd() { # run_cmd LEVEL -- cmd args...
-  local level="${1:-RAW}"
-  shift || true
+_run_capture() { # _run_capture tui|quiet LEVEL -- cmd args...
+  local mode="${1:-tui}"
+  local level="${2:-CMD}"
+  shift 2 || true
   [[ "${1:-}" == "--" ]] && shift || true
 
-  _refresh
-
-  declare -F log_command_start >/dev/null && log_command_start "$level" -- "$@"
-
+  local -a cmd=("$@")
   local -a runner=()
   if command -v stdbuf >/dev/null 2>&1; then
     runner=(stdbuf -oL -eL)
   fi
 
+  [[ "$mode" == "tui" ]] && _refresh
+  declare -F log_command_start >/dev/null && log_command_start "$level" -- "${cmd[@]}"
+
   set +e
-  "${runner[@]}" "$@" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
-    _log_add "$level" "$line"
-    _refresh
+  "${runner[@]}" "${cmd[@]}" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
+    case "$mode" in
+      tui)
+        _log_add "$level" "$line"
+        _refresh
+        ;;
+      quiet)
+        declare -F log_write >/dev/null && log_write "$level" "$line"
+        ;;
+    esac
   done
   local rc=${PIPESTATUS[0]}
   set -e
 
   declare -F log_command_end >/dev/null && log_command_end "$level" "$rc"
 
-  _render
+  if [[ "$mode" == "tui" ]]; then
+    _render
+  elif (( rc != 0 )); then
+    _err "Command failed with status $rc: $(_shell_quote_command "${cmd[@]}")"
+  fi
+
   return "$rc"
 }
 
+run_cmd() { # run_cmd LEVEL -- cmd args...
+  _run_capture tui "$@"
+}
+
 run_quiet() { # run_quiet LEVEL -- cmd args...
+  _run_capture quiet "$@"
+}
+
+run_with_input() { # run_with_input LEVEL INPUT -- cmd args...
   local level="${1:-CMD}"
-  shift || true
+  local input="${2:-}"
+  shift 2 || true
   [[ "${1:-}" == "--" ]] && shift || true
 
-  declare -F log_command_start >/dev/null && log_command_start "$level" -- "$@"
-
+  local -a cmd=("$@")
   local -a runner=()
   if command -v stdbuf >/dev/null 2>&1; then
     runner=(stdbuf -oL -eL)
   fi
 
+  declare -F log_command_start >/dev/null && log_command_start "$level" -- "${cmd[@]}"
+  declare -F log_write >/dev/null && log_write "$level" "stdin supplied: <redacted>"
+
   set +e
-  "${runner[@]}" "$@" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
-    if declare -F log_write >/dev/null; then
-      log_write "$level" "$line"
-    fi
+  printf '%s' "$input" | "${runner[@]}" "${cmd[@]}" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
+    declare -F log_write >/dev/null && log_write "$level" "$line"
   done
-  local rc=${PIPESTATUS[0]}
+  local rc=${PIPESTATUS[1]}
   set -e
 
   declare -F log_command_end >/dev/null && log_command_end "$level" "$rc"
 
   if (( rc != 0 )); then
-    _err "Command failed with status $rc: $(_shell_quote_command "$@")"
+    _err "Command failed with status $rc: $(_shell_quote_command "${cmd[@]}")"
   fi
 
   return "$rc"
 }
-
-

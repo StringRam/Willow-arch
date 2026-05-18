@@ -19,16 +19,16 @@ select_disk() {
 
 partition_disk() {
     info_print "Partitioning disk $disk..."
-parted -s "$disk" \
+run_quiet DISK -- parted -s "$disk" \
     mklabel gpt \
     mkpart esp fat32 1MiB 513MiB \
     set 1 esp on \
-    mkpart root 513MiB 100% ;
+    mkpart root 513MiB 100%
 
     efi_part="/dev/disk/by-partlabel/esp"
     root_part="/dev/disk/by-partlabel/root"
 
     info_print "Default partitioning complete: EFI=$efi_part, ROOT=$root_part"
     info_print "Informing the Kernel about the disk changes."
-    partprobe "$disk"
+    run_quiet DISK -- partprobe "$disk"
 }

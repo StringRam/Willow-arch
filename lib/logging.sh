@@ -3,8 +3,9 @@
 #└──────────────────────────────  ──────────────────────────────┘
 
 : "${LOG_ENABLED:=1}"
-: "${LOG_DIR:=/tmp}"
+: "${LOG_DIR:=/tmp/willow-arch}"
 : "${LOG_FILE:=}"
+: "${LOG_TARGET_DIR:=/mnt/var/log/willow-arch}"
 
 _log_timestamp() {
   date '+%Y-%m-%dT%H:%M:%S%z'
@@ -37,6 +38,7 @@ log_init() {
   log_write INFO "Willow-Arch installer log started."
   log_write INFO "Log file: $LOG_FILE"
   log_write INFO "Script directory: ${SCRIPT_DIR:-unknown}"
+  log_write INFO "Bash: ${BASH_VERSION:-unknown}"
 }
 
 log_write() { # log_write LEVEL message...
@@ -65,4 +67,18 @@ log_command_end() { # log_command_end LEVEL STATUS
   local rc="${2:-unknown}"
 
   log_write "$level" "command exited with status $rc"
+}
+
+log_copy_to_target() {
+  [[ "${LOG_ENABLED:-1}" -eq 1 ]] || return 0
+  [[ -n "${LOG_FILE:-}" && -r "$LOG_FILE" ]] || return 0
+  [[ -d /mnt/var/log ]] || return 0
+
+  local target_dir="${LOG_TARGET_DIR:-/mnt/var/log/willow-arch}"
+  local target_file="$target_dir/$(basename "$LOG_FILE")"
+
+  mkdir -p "$target_dir" 2>/dev/null || return 0
+  cp -f "$LOG_FILE" "$target_file" 2>/dev/null || return 0
+  chmod 600 "$target_file" 2>/dev/null || true
+  log_write INFO "Copied installer log to target system: $target_file"
 }

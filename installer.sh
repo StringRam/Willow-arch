@@ -50,8 +50,8 @@ until set_rootpasswd; do : ; done
 progress_set 2
 
 info_print "Wiping $disk."
-wipefs -af "$disk" &>/dev/null
-sgdisk -Zo "$disk" &>/dev/null
+run_quiet DISK -- wipefs -af "$disk"
+run_quiet DISK -- sgdisk -Zo "$disk"
 
 partition_disk
 format_partitions
@@ -69,7 +69,7 @@ echo "$hostname" > /mnt/etc/hostname
 
 fstab_file
 
-sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
+run_quiet SYS -- sed -i "/^#$locale/s/^#//" /mnt/etc/locale.gen
 echo "LANG=$locale" > /mnt/etc/locale.conf
 echo "KEYMAP=$kblayout" > /mnt/etc/vconsole.conf
 
@@ -93,19 +93,19 @@ grub_installation
 progress_set 7
 
 info_print "Setting root password."
-echo "root:$rootpasswd" | arch-chroot /mnt chpasswd
+run_with_input SYS "root:$rootpasswd" -- arch-chroot /mnt chpasswd
 
 if [[ -n "$username" ]]; then
     echo "%wheel ALL=(ALL:ALL) ALL" > /mnt/etc/sudoers.d/wheel
     info_print "Adding the user $username to the system with root privilege."
-    arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
+    run_quiet SYS -- arch-chroot /mnt useradd -m -G wheel -s /bin/bash "$username"
     info_print "Setting user password for $username."
-    echo "$username:$userpasswd" | arch-chroot /mnt chpasswd
+    run_with_input SYS "$username:$userpasswd" -- arch-chroot /mnt chpasswd
 fi
 progress_set 8
 
 info_print "Configuring /boot backup when pacman transactions are made."
-mkdir -p /mnt/etc/pacman.d/hooks
+run_quiet SYS -- mkdir -p /mnt/etc/pacman.d/hooks
 cat > /mnt/etc/pacman.d/hooks/50-bootbackup.hook <<EOF
 [Trigger]
 Operation = Upgrade
@@ -122,16 +122,16 @@ Exec = /usr/bin/rsync -a --delete /boot /.bootbackup
 EOF
 
 info_print "Enabling colours and parallel downloads for pacman."
-sed -Ei 's/^#(Color)$/\1/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
+run_quiet SYS -- sed -Ei 's/^#(Color)$/\1/;s/^#(ParallelDownloads).*/\1 = 10/' /mnt/etc/pacman.conf
 
 info_print "Enabling multilib repository in pacman.conf."
-sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
-arch-chroot /mnt pacman -Sy --noconfirm &>/dev/null
+run_quiet SYS -- sed -i "/^#\[multilib\]/,/^$/{s/^#//}" /mnt/etc/pacman.conf
+run_cmd RAW -- arch-chroot /mnt pacman -Sy --noconfirm
 
 info_print "Enabling Reflector, automatic snapshots, BTRFS scrubbing, bluetooth and NetworkManager services."
 services=(reflector.timer snapper-timeline.timer snapper-cleanup.timer btrfs-scrub@-.timer btrfs-scrub@home.timer btrfs-scrub@var-log.timer btrfs-scrub@\\x2esnapshots.timer grub-btrfsd.service bluetooth.service NetworkManager.service systemd-oomd.service)
 for service in "${services[@]}"; do
-    systemctl enable "$service" --root=/mnt &>/dev/null
+    run_quiet SYS -- systemctl enable "$service" --root=/mnt
 done
 progress_set 9
 
@@ -139,6 +139,7 @@ until aur_helper_selector; do : ; done
 install_aur_helper
 progress_set 10
 
+log_copy_to_target
 info_print "Done, you may now wish to reboot (further changes can be done by chrooting into /mnt)."
 info_print "Remember to unmount all partitions before rebooting."
 }

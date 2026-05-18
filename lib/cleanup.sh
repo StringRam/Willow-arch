@@ -7,6 +7,7 @@ installer_cleanup() {
 
     if declare -F log_write >/dev/null; then
         log_write INFO "Installer exiting with status $exit_code."
+        log_copy_to_target || true
     fi
 
     if [[ "${RUN_TUI:-1}" -eq 1 ]] && declare -F tui_cleanup >/dev/null; then
