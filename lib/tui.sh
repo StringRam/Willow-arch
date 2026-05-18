@@ -136,6 +136,10 @@ log_add() {  # log_add LEVEL "mensaje"
 
   LOG_LINES+=("${level}|${msg}")
 
+  if declare -F log_write >/dev/null; then
+    log_write "$level" "$msg"
+  fi
+
   if (( ${#LOG_LINES[@]} > LOG_MAX )); then
     LOG_LINES=("${LOG_LINES[@]: -$LOG_MAX}")
   fi

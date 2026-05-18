@@ -25,6 +25,8 @@ run_cmd() { # run_cmd LEVEL -- cmd args...
 
   _refresh
 
+  declare -F log_command_start >/dev/null && log_command_start "$level" -- "$@"
+
   local -a runner=()
   if command -v stdbuf >/dev/null 2>&1; then
     runner=(stdbuf -oL -eL)
@@ -38,7 +40,39 @@ run_cmd() { # run_cmd LEVEL -- cmd args...
   local rc=${PIPESTATUS[0]}
   set -e
 
+  declare -F log_command_end >/dev/null && log_command_end "$level" "$rc"
+
   _render
+  return "$rc"
+}
+
+run_quiet() { # run_quiet LEVEL -- cmd args...
+  local level="${1:-CMD}"
+  shift || true
+  [[ "${1:-}" == "--" ]] && shift || true
+
+  declare -F log_command_start >/dev/null && log_command_start "$level" -- "$@"
+
+  local -a runner=()
+  if command -v stdbuf >/dev/null 2>&1; then
+    runner=(stdbuf -oL -eL)
+  fi
+
+  set +e
+  "${runner[@]}" "$@" 2>&1 | sanitize_stream | while IFS= read -r line || [[ -n "$line" ]]; do
+    if declare -F log_write >/dev/null; then
+      log_write "$level" "$line"
+    fi
+  done
+  local rc=${PIPESTATUS[0]}
+  set -e
+
+  declare -F log_command_end >/dev/null && log_command_end "$level" "$rc"
+
+  if (( rc != 0 )); then
+    _err "Command failed with status $rc: $(_shell_quote_command "$@")"
+  fi
+
   return "$rc"
 }
 

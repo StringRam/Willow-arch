@@ -12,6 +12,7 @@ SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # Defaults may be overridden by environment variables or future CLI flags.
 [[ -r "$SCRIPT_DIR/config/defaults.conf" ]] && source "$SCRIPT_DIR/config/defaults.conf"
 
+source "$SCRIPT_DIR/lib/logging.sh"
 source "$SCRIPT_DIR/lib/tui.sh"
 source "$SCRIPT_DIR/lib/cleanup.sh"
 source "$SCRIPT_DIR/lib/run.sh"
@@ -26,6 +27,7 @@ source "$SCRIPT_DIR/lib/bootloader.sh"
 register_cleanup_trap
 
 main() {
+log_init
 clear
 
 enter_alt

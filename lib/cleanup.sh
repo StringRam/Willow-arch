@@ -5,6 +5,10 @@ installer_cleanup() {
 
     trap - EXIT INT TERM ERR
 
+    if declare -F log_write >/dev/null; then
+        log_write INFO "Installer exiting with status $exit_code."
+    fi
+
     if [[ "${RUN_TUI:-1}" -eq 1 ]] && declare -F tui_cleanup >/dev/null; then
         tui_cleanup || true
     fi
@@ -26,6 +30,11 @@ installer_error_trap() {
     local exit_code=$?
     local line_no="${1:-unknown}"
     local command="${2:-unknown}"
+
+    if declare -F log_write >/dev/null; then
+        log_write ERR "line $line_no: $command"
+        log_write ERR "status=$exit_code"
+    fi
 
     if [[ "${RUN_TUI:-1}" -eq 1 ]] && declare -F tui_error_pause >/dev/null; then
         tui_error_pause "$exit_code" "$line_no" "$command" || true
