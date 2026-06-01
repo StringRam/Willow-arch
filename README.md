@@ -13,9 +13,6 @@ It is currently a personal, opinionated installation flow with an interactive te
 
 > ⚠️ This script partitions and formats disks. Read the code before running it.
 
-Known limitations:
-- There is no persistent install log yet.
-
 ---
 
 ## What It Installs
