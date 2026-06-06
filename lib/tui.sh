@@ -44,12 +44,12 @@ have_tty() { [[ -t 0 && -t 1 ]]; }
 enter_alt() {
   have_tty || return 0
   silence_tty_noise
-  tput smcup >/dev/null 2>&1 || return 0
+  tput smcup >/dev/null 2>&1 || true
 }
 
 exit_alt() {
   have_tty || return 0
-  tput rmcup >/dev/null 2>&1 || return 0
+  tput rmcup >/dev/null 2>&1 || true
   restore_tty_noise
 }
 

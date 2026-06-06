@@ -12,6 +12,11 @@ SCRIPT_DIR=$(cd -- "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 # Defaults may be overridden by environment variables or future CLI flags.
 [[ -r "$SCRIPT_DIR/config/defaults.conf" ]] && source "$SCRIPT_DIR/config/defaults.conf"
 
+if [[ "${RUN_TUI:-1}" -ne 1 ]]; then
+    printf '[WARN] RUN_TUI=0 is not supported yet; forcing RUN_TUI=1.\n' >&2
+    RUN_TUI=1
+fi
+
 source "$SCRIPT_DIR/lib/logging.sh"
 source "$SCRIPT_DIR/lib/tui.sh"
 source "$SCRIPT_DIR/lib/cleanup.sh"
